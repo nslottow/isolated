@@ -1,0 +1,49 @@
+# OS junk files
+[Tt]humbs.db
+*.DS_Store
+
+# Visual Studio files
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.sdf
+*.opensdf
+*.pdb
+*.unsuccessfulbuild
+ipch/
+
+# vim Temp Files
+*~
+
+# NuGet
+packages/
+*.nupkg
+
+# Visual Studio database projects
+*.dbmdl
+
+# Test files
+*.testsettings
+
+# Object files
+[Oo]bj/
+
+# Executables
+win32/*.exe
+
+# External library docs
+[Ee]xt/
