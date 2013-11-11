@@ -1,3 +1,7 @@
+if (CMAKE_COMPILER_IS_GNUCXX)
+	add_definitions(-std=c++11)
+endif()
+
 add_executable(isolated
 	Color.h Color.cpp
 	Config.h Config.cpp

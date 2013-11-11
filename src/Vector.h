@@ -61,7 +61,7 @@ struct Vec2 {
 	}
 
 	float distance(const Vec2& a, const Vec2& b) {
-		return std::sqrtf(sqrDistance(a, b));
+		return std::sqrt(sqrDistance(a, b));
 	}
 };
 

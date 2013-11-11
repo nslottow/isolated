@@ -104,7 +104,7 @@ void Config::addFile(const char* path, ostream& errorStream) {
 
 		auto keyEndPos = inputLine.find_first_of(whitespace, keyStartPos);
 		key = inputLine.substr(keyStartPos, keyEndPos - keyStartPos);
-		transform(key.begin(), key.end(), key.begin(), tolower);
+		transform(key.begin(), key.end(), key.begin(), ::tolower);
 
 		// Skip commented lines
 		if (key[0] == ';') {
