@@ -7,6 +7,7 @@ endif()
 add_executable(isolated
 	Color.h Color.cpp
 	Config.h Config.cpp
+	Entity.h
 	Game.h Game.cpp
 	Input.h Input.cpp
 	Main.cpp
