@@ -2,6 +2,10 @@ project(isolated)
 
 cmake_minimum_required(VERSION 2.8)
 
+if (MSVC)
+	set(CMAKE_SUPPRESS_REGENERATION ON CACHE BOOL "Suppress regeneration of VS project files")
+endif()
+
 function(create_vcxproj_userfile TARGETNAME)
   if (MSVC)
     configure_file(
@@ -9,7 +13,7 @@ function(create_vcxproj_userfile TARGETNAME)
           ${CMAKE_CURRENT_BINARY_DIR}/${TARGETNAME}.vcxproj.user
           @ONLY
         )
-  endif ()
+  endif()
 endfunction(create_vcxproj_userfile)
 
 # Include GLFW
