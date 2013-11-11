@@ -2,6 +2,14 @@
 [Tt]humbs.db
 *.DS_Store
 
+# CMake files
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+build/
+
 # Visual Studio files
 *.user
 *.aps
@@ -43,7 +51,7 @@ packages/
 [Oo]bj/
 
 # Executables
-win32/*.exe
+*.exe
 
 # External library docs
 [Ee]xt/
