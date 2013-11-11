@@ -46,7 +46,7 @@ You can build the game by running the following:
 
 Then depending on your OS either use the generated project files or run:
 
-	cd build && make
+	make
 
 The executable should be generated in the repository root.
 
