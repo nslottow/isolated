@@ -2,6 +2,8 @@
 #define COLOR_H
 
 struct Color {
+	static const Color kWhite;
+
 	float r, g, b, a;
 
 	Color operator*(const float s) {

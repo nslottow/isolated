@@ -21,7 +21,7 @@ public:
 	float getFloat(const char* key, float defaultValue = 0.f);
 	double getDouble(const char* key, double defaultValue = 0.0);
 	const char* getString(const char* key, const char* defaultValue = "");
-	Color getColor(const char* key, Color defaultValue = { 1.f, 1.f, 1.f, 1.f });
+	Color getColor(const char* key, Color defaultValue = Color::kWhite);
 	bool keyExists(const char* key);
 
 	void setProperty(const char* key, const char* value);

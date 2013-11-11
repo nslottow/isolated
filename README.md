@@ -4,7 +4,7 @@ It's a simple, competitive game in which players build walls in an attempt to
 gain territory and ensnare opponents.
 
 The game is currently in a playable state with a single game mode and some
-parameters that are configurable via a settings file.
+parameters that are configurable via a settings file in the data directory.
 
 Part of my motivation for writing the game is to take a small networked C++ game
 project from start to finish. I'm interested to see what types of design
@@ -38,6 +38,21 @@ although I'm considering adding support for other alternatives.
 * Movement - WASD
 * Build - 1
 * Melee - 2
+
+## Building
+You can build the game by running the following:
+	
+	cd build && cmake .
+
+Then depending on your OS either use the generated project files or run:
+
+	cd build && make
+
+The executable should be generated in the repository root.
+
+If you get errors complaining about the Xf86VideoMode library on Ubuntu,
+try installing xorg-dev and libglu1-mesa-dev, or their equivalent packages
+if you're running a different distribution.
 
 ## Hacking
 The game is far from complete, but is simple enough that it is definitely
