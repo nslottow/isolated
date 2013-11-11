@@ -40,6 +40,8 @@ although I'm considering adding support for other alternatives.
 * Melee - 2
 
 ## Building
+Building requires C++11 support, so you either need Visual Studio >= 2012,
+Clang >= 3.0, or G++ >= 4.7.
 You can build the game by running the following:
 	
 	cd build && cmake .

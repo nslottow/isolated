@@ -2,6 +2,16 @@ project(isolated)
 
 cmake_minimum_required(VERSION 2.8)
 
+function(create_vcxproj_userfile TARGETNAME)
+  if (MSVC)
+    configure_file(
+          ${CMAKE_SOURCE_DIR}/VisualStudioUserFile.vcxproj.user.in
+          ${CMAKE_CURRENT_BINARY_DIR}/${TARGETNAME}.vcxproj.user
+          @ONLY
+        )
+  endif ()
+endfunction(create_vcxproj_userfile)
+
 # Include GLFW
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW examples")
