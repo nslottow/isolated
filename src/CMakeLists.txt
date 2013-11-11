@@ -1,5 +1,5 @@
-if (CMAKE_COMPILER_IS_GNUCXX)
-	add_definitions(-std=c++11)
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+	add_definitions(-Wall -std=c++11)
 endif()
 
 add_executable(isolated
