@@ -483,6 +483,11 @@ void Game::collidePlayersWithWorld() {
 				if (wall && wall->active) {
 					collidePlayerWithWall(player, wall);
 				}
+
+				auto& incoming = getCellAt(i, j).incomingWall;
+				if (incoming && incoming->active) {
+					collidePlayerWithWall(player, wall);
+				}
 			}
 		}
 	}

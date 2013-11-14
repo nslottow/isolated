@@ -49,4 +49,7 @@ public:
 	void reset() { mStartTime = mClock.getTime(); mEndTime = mStartTime + mDuration; }
 };
 
+// Timers as processes that spawn other processes when they expire
+// Timers that simply fire events to observers when they expire, could be member function with shared ptr as state
+
 #endif

@@ -1,7 +1,7 @@
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
 	add_definitions(-Wall -std=c++11)
 else (MSVC)
-	add_definitions(/W4)
+	add_definitions(/W3)
 endif()
 
 add_executable(isolated
