@@ -30,9 +30,10 @@ WallPtr Game::createWall(int x, int y, int playerId) {
 		return nullptr;
 	}
 
-	auto& wall = getWallAt(x, y);
+	auto wall = getWallAt(x, y);
 	if (!wall) {
 		wall = make_shared<Wall>(*this, x, y, playerId);
+		setWallAt(x, y, wall);
 		mFillRule->onWallCreated(x, y);
 		return wall;
 	} else if (wall->getPlayerId() == playerId) {
@@ -45,12 +46,11 @@ WallPtr Game::createWall(int x, int y, int playerId) {
 }
 
 void Game::removeWall(int x, int y) {
-	auto& wall = getWallAt(x, y);
-	if (!wall) {
+	if (!getWallAt(x, y)) {
 		return;
 	}
 
-	wall.reset();
+	setWallAt(x, y, nullptr);
 	mFillRule->onWallDestroyed(x, y);
 }
 
@@ -60,7 +60,7 @@ bool Game::attackWall(int x, int y, char damage) {
 		return false;
 	}
 
-	auto& wall = getWallAt(x, y);
+	auto wall = getWallAt(x, y);
 	if (!wall) {
 		return false;
 	}
@@ -83,7 +83,7 @@ void Game::update(float dt) {
 	// Update walls
 	for (int i = 0; i < mWidth; ++i) {
 		for (int j = 0; j < mHeight; ++j) {
-			auto& wall = getWallAt(i, j);
+			auto wall = getWallAt(i, j);
 			if (wall) {
 				if (wall->active) {
 					wall->update(dt);
@@ -135,7 +135,7 @@ void Game::renderDebug() {
 	glBegin(GL_QUADS);
 	for (int i = 0; i < mWidth; ++i) {
 		for (int j = 0; j < mHeight; ++j) {
-			auto& wall = getWallAt(i, j);
+			auto wall = getWallAt(i, j);
 			if (wall) {
 				auto& pos = wall->position;
 				float height = wall->getHeight() * 0.5f;
@@ -160,26 +160,6 @@ void Game::renderDebug() {
 		}
 	}
 	glEnd();
-
-	// Render fill algorithm debug info
-	//glBegin(GL_POINTS);
-	//for (int i = 0; i < mWidth; ++i) {
-	//	for (int j = 0; j < mHeight; ++j) {
-	//		auto& cell = getCellAt(i, j);
-	//		// Draw the distance to the next wall
-	//		float spacing = 0.07f;
-	//		for (int k = 1; k <= cell.nextWallX; ++k) {
-	//			glColor3f(0.f, 1.f, 1.f);
-	//			glVertex2f(i + spacing * (k + 1), j + spacing);
-	//		}
-
-	//		for (int k = 1; k <= cell.nextWallY; ++k) {
-	//			glColor3f(1.f, 0.f, 1.f);
-	//			glVertex2f(i + spacing, j + spacing * (k + 1));
-	//		}
-	//	}
-	//}
-	//glEnd();
 
 	// Render players
 	for (auto& player : mPlayers) {
@@ -304,7 +284,7 @@ void Game::collidePlayersWithWorld() {
 					continue;
 				}
 
-				auto& wall = getWallAt(i, j);
+				auto wall = getWallAt(i, j);
 				if (wall && wall->active) {
 					collidePlayerWithWall(player, wall);
 				}

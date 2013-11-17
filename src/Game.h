@@ -68,6 +68,10 @@ private:
 	Clock mClock;
 
 private:
+	void setWallAt(int x, int y, WallPtr wall) {
+		mWalls[x + y * mWidth] = wall;
+	}
+
 	void removeWall(int x, int y);
 
 	void boundEntity(EntityPtr entity);
@@ -88,8 +92,7 @@ public:
 	int getMaxPlayers() const { return mMaxPlayers; }
 	int getNumPlayers() const { return mPlayers.size(); }
 
-	// TODO: This shouldn't return a reference to a shared ptr now that it's public
-	WallPtr& getWallAt(int x, int y) {
+	WallPtr getWallAt(int x, int y) {
 		return mWalls[x + y * mWidth];
 	}
 
