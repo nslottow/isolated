@@ -8,6 +8,7 @@ add_executable(isolated
 	Color.h Color.cpp
 	Config.h Config.cpp
 	Entity.h
+	FillRules.h FillRules.cpp
 	Game.h Game.cpp
 	Input.h Input.cpp
 	Main.cpp

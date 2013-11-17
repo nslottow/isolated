@@ -13,25 +13,6 @@
 // The important things happen on events, and movement is just a smooth interface to trigger discrete events
 // This game may be too simple to warrant an event system where objects register for events they care about
 
-class FillRule {
-public:
-	virtual void onInit() = 0 {} // Initialize per-cell data
-
-	virtual void onWallCreated(int x, int y) = 0 {}
-
-	virtual void onWallCompleted(int x, int y) = 0 {}
-
-	virtual void onWallDestroyed(int x, int y) = 0 {}
-
-	virtual void onWallMoved(int fromX, int fromY, int toX, int toY) = 0 {}
-
-private:
-	// Somehow give this access to the cells, isInBounds, getCellAt, getWallAt, createWall, destroyWall
-	// Maybe just have this allocate cells, and have the game allocate wall ptrs & entities from pools
-	// Maybe have FillRule be a friend class of Game?
-	// Maybe have game make isInBounds, getCellAt, and getWallAt public
-};
-
 class VictoryRule {
 public:
 	// These are represented by a victory rule:
@@ -70,68 +51,57 @@ public:
 // Walls moving shouldn't screw up the state of the game grid... so only the game should be able to initiate it-
 //   or, the game should account for walls being moved when it updates them
 
+class IFillRule;
+
 class Game {
 private:
-	struct Cell {
-		int nextWallX; // Distance to the next wall in the positive x direction
-		int nextWallY; // Distance to the next wall in the positive y direction
-		WallPtr wall;
-		WallPtr incomingWall;
-	};
-
 	int mWidth, mHeight;
-	std::vector<Cell> mCells;
+	std::vector<WallPtr> mWalls;
 
 	int mMaxPlayers;
 	int mNumPlayers;
 	std::vector<PlayerPtr> mPlayers;
+	std::vector<int> mFreeEntityIds;
+
+	std::shared_ptr<IFillRule> mFillRule;
 
 	Clock mClock;
 
 private:
-	void initEdges();
-	bool isEdgeContiguous(int& x, int& y, int directionIndex);
-	bool getRectangularRegion(int x, int y, int initialDirectionIndex, int& left, int& bottom, int& right, int& top);
-	bool isRegionEmpty(int left, int bottom, int right, int top);
-	// void fillEnclosedRegions(int x, int y, int playerId); // Use 
-
 	void removeWall(int x, int y);
+
+	void boundEntity(EntityPtr entity);
+	void collidePlayerWithWall(PlayerPtr player, WallPtr wall);
+	void collidePlayersWithWorld();
 
 public:
 	Game(int width, int height); // Create empty grid of the specified size
 	Game(std::istream& in);	// Load a grid from the specified stream
 
+	int getWidth() const { return mWidth; }
+	int getHeight() const { return mHeight; }
+
+	bool isInBounds(int x, int y) {
+		return x >= 0 && x < mWidth && y >= 0 && y < mHeight;
+	}
+
 	int getMaxPlayers() const { return mMaxPlayers; }
 	int getNumPlayers() const { return mPlayers.size(); }
-	PlayerPtr getPlayer(int playerId) { return mPlayers[playerId]; }
+
+	// TODO: This shouldn't return a reference to a shared ptr now that it's public
+	WallPtr& getWallAt(int x, int y) {
+		return mWalls[x + y * mWidth];
+	}
 
 	WallPtr createWall(int x, int y, int playerId);
 	bool attackWall(int x, int y, char damage); // Returns true if attack hit a Wall
-	void fillEmptyRegions(int x, int y, int playerId);
+	void onWallCompleted(int x, int y);
 
 	const Clock& getClock() const { return mClock; }
 
 	void update(float dt);
 
 	void renderDebug();
-
-private:
-	bool isInBounds(int x, int y) {
-		return x >= 0 && x < mWidth && y >= 0 && y < mHeight;
-	}
-
-	Cell& getCellAt(int x, int y) {
-		assert(isInBounds(x, y));
-		return mCells[x + y * mWidth];
-	}
-
-	WallPtr& getWallAt(int x, int y) {
-		return getCellAt(x, y).wall;
-	}
-
-	void boundEntity(EntityPtr entity);
-	void collidePlayerWithWall(PlayerPtr player, WallPtr wall);
-	void collidePlayersWithWorld();
 };
 
 #endif

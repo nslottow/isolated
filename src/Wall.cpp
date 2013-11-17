@@ -1,5 +1,6 @@
 #include "Wall.h"
 
+#include "FillRules.h"
 #include "Game.h"
 #include <GLFW/glfw3.h>
 
@@ -63,7 +64,7 @@ void Wall::update(float dt) {
 	if (mState == WALL_RISING) {
 		if (mBuildTimer.isExpired()) {
 			mState = WALL_STATIC;
-			mGame.fillEmptyRegions((int)position.x, (int)position.y, mPlayerId);
+			mGame.onWallCompleted((int)position.x, (int)position.y);
 		}
 	} else if (mState == WALL_FALLING) {
 		if (mBuildTimer.isExpired()) {
