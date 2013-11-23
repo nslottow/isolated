@@ -12,17 +12,35 @@ using namespace std;
 Game::Game(int width, int height) :
 	mMaxPlayers(4), mNumPlayers(2),
 	mWidth(width), mHeight(height),
-	mWalls(width * height)
+	mWalls(width * height),
+	mNextEntityId(0)
 {
 	mFillRule.reset(new EmptyRectanglesFillRule(*this));
 	mFillRule->onInit();
 
 	// Setup players
 	for (int i = 0; i < 2; ++i) {
-		mPlayers.push_back(make_shared<Player>(*this, i, i));
-		mPlayers[i]->position.x = (float)(rand() % mWidth);
-		mPlayers[i]->position.y = (float)(rand() % mHeight);
+		createPlayer(rand() % mWidth, rand() % mHeight);
 	}
+}
+
+int Game::popNextEntityId() {
+	int entityId;
+	if (mFreeEntityIds.empty()) {
+		entityId = mNextEntityId++;
+	} else {
+		entityId = mFreeEntityIds.back();
+		mFreeEntityIds.pop_back();
+	}
+
+	return entityId;
+}
+
+void Game::createPlayer(int x, int y) {
+	auto player = make_shared<Player>(*this, popNextEntityId(), mPlayers.size());
+	mPlayers.push_back(player);
+	player->position.x = (float)x;
+	player->position.y = (float)y;
 }
 
 WallPtr Game::createWall(int x, int y, int playerId) {
@@ -32,7 +50,7 @@ WallPtr Game::createWall(int x, int y, int playerId) {
 
 	auto wall = getWallAt(x, y);
 	if (!wall) {
-		wall = make_shared<Wall>(*this, x, y, playerId);
+		wall = make_shared<Wall>(*this, x, y, popNextEntityId(), playerId);
 		setWallAt(x, y, wall);
 		mFillRule->onWallCreated(x, y);
 		return wall;
@@ -46,11 +64,14 @@ WallPtr Game::createWall(int x, int y, int playerId) {
 }
 
 void Game::removeWall(int x, int y) {
-	if (!getWallAt(x, y)) {
+	auto wall = getWallAt(x, y);
+	if (!wall) {
 		return;
 	}
 
+	mFreeEntityIds.push_back(wall->getEntityId());
 	setWallAt(x, y, nullptr);
+
 	mFillRule->onWallDestroyed(x, y);
 }
 
@@ -207,6 +228,34 @@ static bool intersect(float a1, float a2, float b1, float b2, float& pushApart) 
 	return false;
 }
 
+void Game::collideEntities(EntityPtr a, EntityPtr b) {
+	float ax1 = a->position.x;
+	float ax2 = ax1 + a->size.x;
+	float ay1 = a->position.y;
+	float ay2 = ay1 + a->size.y;
+
+	float bx1 = b->position.x;
+	float bx2 = bx1 + b->size.x;
+	float by1 = b->position.y;
+	float by2 = by1 + b->size.y;
+
+	// Separating axis theorem on x-axis
+	float pushApartX;
+	bool overlapsX = intersect(ax1, ax2, bx1, bx2, pushApartX);
+
+	// Separating axis theorem on y-axis
+	float pushApartY;
+	bool overlapsY = intersect(ay1, ay2, by1, by2, pushApartY);
+
+	// The entities are colliding if they intersect on both the x and y axes
+	if (overlapsX && overlapsY) {
+		// TODO: Check if this collision already existed
+	}
+
+	// TODO: For any collisions that have not been persisted, they have been exited
+}
+
+// TODO: Make this collide any entities and fire onCollision* for both entities
 void Game::collidePlayerWithWall(PlayerPtr player, WallPtr wall) {
 	float px1 = player->position.x;
 	float px2 = px1 + player->size.x;

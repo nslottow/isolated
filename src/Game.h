@@ -7,6 +7,7 @@
 #include <cassert>
 #include <istream>
 #include <memory>
+#include <set>
 #include <vector>
 
 // Could make this more event driven...
@@ -62,12 +63,21 @@ private:
 	int mNumPlayers;
 	std::vector<PlayerPtr> mPlayers;
 	std::vector<int> mFreeEntityIds;
+	int mNextEntityId;
 
 	std::shared_ptr<IFillRule> mFillRule;
 
 	Clock mClock;
 
+public:
+	Game(int width, int height); // Create empty grid of the specified size
+	Game(std::istream& in);	// Load a grid from the specified stream
+
 private:
+	int popNextEntityId();
+
+	void createPlayer(int x, int y);
+
 	void setWallAt(int x, int y, WallPtr wall) {
 		mWalls[x + y * mWidth] = wall;
 	}
@@ -75,13 +85,11 @@ private:
 	void removeWall(int x, int y);
 
 	void boundEntity(EntityPtr entity);
+	void collideEntities(EntityPtr a, EntityPtr b);
 	void collidePlayerWithWall(PlayerPtr player, WallPtr wall);
 	void collidePlayersWithWorld();
 
 public:
-	Game(int width, int height); // Create empty grid of the specified size
-	Game(std::istream& in);	// Load a grid from the specified stream
-
 	int getWidth() const { return mWidth; }
 	int getHeight() const { return mHeight; }
 
@@ -91,6 +99,9 @@ public:
 
 	int getMaxPlayers() const { return mMaxPlayers; }
 	int getNumPlayers() const { return mPlayers.size(); }
+
+	EntityPtr createEntity(int x, int y, int type);
+	void destroyEntity(EntityPtr entity);
 
 	WallPtr getWallAt(int x, int y) {
 		return mWalls[x + y * mWidth];

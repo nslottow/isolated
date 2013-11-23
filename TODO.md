@@ -43,6 +43,7 @@
 * Map editor
 * Input configuration menu
 * Steam API integration, mostly to see how that works
+* Maybe make player collision shape into a circle so it's easier to move around walls
 
 # Frills
 * Pixel art tileset

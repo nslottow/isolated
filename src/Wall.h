@@ -35,7 +35,7 @@ public:
 	static float sFallTime;
 	static int sMaxStrength;
 
-	Wall(Game& game, int x, int y, int playerId);
+	Wall(Game& game, int x, int y, int entityId, int playerId);
 
 	int getPlayerId() const { return mPlayerId; }
 	int getStrength() const { return mStrength; }

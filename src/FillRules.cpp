@@ -39,11 +39,9 @@ bool EmptyRectanglesFillRule::getRectangularRegion(int x, int y, int initialDire
 	left = right = x;
 	bottom = top = y;
 
-	/*auto& initialDirection = kDirectionInfo[initialDirectionIndex];
+	auto& initialDirection = kDirectionInfo[initialDirectionIndex];
 	int checkX = x + initialDirection.dxNext;
-	int checkY = y + initialDirection.dyNext;*/
-	int checkX = x;
-	int checkY = y;
+	int checkY = y + initialDirection.dyNext;
 
 	for (unsigned int edgeIndex = 0; edgeIndex < 4; ++edgeIndex) {
 		int edgeDirectionIndex = (initialDirectionIndex + edgeIndex) % 4;

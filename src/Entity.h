@@ -11,9 +11,15 @@ enum Direction {
 	DIR_DOWN = 3,
 };
 
+enum EntityType {
+	ENTITY_PLAYER,
+	ENTITY_WALL
+};
+
 class Entity {
 private:
 	int mEntityId;
+	EntityType mEntityType;
 
 public:
 	bool active;
@@ -27,8 +33,11 @@ private:
 	Entity(Entity&&) = delete;
 
 public:
-	Entity(int id) :
-		mEntityId(id), active(true) {}
+	Entity(int id, EntityType type) :
+		mEntityId(id), mEntityType(type), active(true) {}
+
+	int getEntityId() const { return mEntityId; }
+	EntityType getType() const { return mEntityType; }
 };
 
 typedef std::shared_ptr<Entity> EntityPtr;

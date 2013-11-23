@@ -9,8 +9,8 @@ float Wall::sRiseTime = 0.7f;
 float Wall::sFallTime = 0.7f;
 int Wall::sMaxStrength = 3;
 
-Wall::Wall(Game& game, int x, int y, int playerId) :
-	Entity(0), // TODO: Give walls an entityId
+Wall::Wall(Game& game, int x, int y, int entityId, int playerId) :
+	Entity(entityId, ENTITY_WALL), // TODO: Give walls an entityId
 	mState(WALL_RISING),
 	mGame(game),
 	mPlayerId(playerId),

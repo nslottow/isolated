@@ -11,7 +11,7 @@ using namespace std;
 float Player::sBuildAdvanceTime = 0.3f;
 
 Player::Player(Game& game, int entityId, int playerId) :
-	Entity(entityId),
+	Entity(entityId, ENTITY_PLAYER),
 	mGame(game),
 	mState(PLAYER_NORMAL),
 	mPlayerId(playerId),
