@@ -25,5 +25,9 @@ set(GLFW_INSTALL OFF CACHE BOOL "Create GLFW install targets")
 add_subdirectory(../extlib/glfw glfw)
 include_directories(../extlib/glfw/include)
 
+# Include SOIL
+add_subdirectory(../extlib/soil soil)
+include_directories(../extlib)
+
 # Build the src directory
 add_subdirectory(../src isolated)

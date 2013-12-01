@@ -16,7 +16,7 @@ add_executable(isolated
 	Time.h
 	Wall.h Wall.cpp)
 
-target_link_libraries(isolated glfw ${GLFW_LIBRARIES})
+target_link_libraries(isolated glfw ${GLFW_LIBRARIES} soil)
 
 set(DEBUG_WORKING_DIR ${CMAKE_SOURCE_DIR}/..)
 
