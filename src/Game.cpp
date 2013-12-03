@@ -134,7 +134,7 @@ void Game::renderDebug() {
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(-1., mWidth + 1., -1., mHeight + 1., -1.f, 1.f);
+	glOrtho(-1., mWidth + 1., -1., mHeight + 1., -1., 1.);
 	glMatrixMode(GL_MODELVIEW);
 
 	// Render grid
@@ -187,6 +187,8 @@ void Game::renderDebug() {
 		glColor4fv((const GLfloat*)&playerColors[player->getPlayerId()]);
 		player->renderDebug();
 	}
+
+	glDisable(GL_BLEND);
 }
 
 void Game::boundEntity(EntityPtr entity) {
