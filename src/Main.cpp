@@ -1,8 +1,8 @@
 #include "Config.h"
 #include "DebugFont.h"
 #include "DebugConsole.h"
-#include "Game.h"
 #include "Input.h"
+#include "SceneLocalGame.h"
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
 #include <cstdlib>
@@ -15,17 +15,7 @@ extern "C" void __stdcall Sleep(int millis);
 
 using namespace std;
 
-GLuint gDebugFontTexture;
-
 void run(GLFWwindow* window) {
-	// Load settings from config
-	auto& config = gConfig["defaults"];
-	Wall::sRiseTime = config.getFloat("wall-rise-time", Wall::sRiseTime);
-	Wall::sFallTime = config.getFloat("wall-fall-time", Wall::sFallTime);
-	Wall::sMaxStrength = config.getInt("wall-strength", Wall::sMaxStrength);
-	Player::sBuildAdvanceTime = config.getFloat("build-advance-time", Player::sBuildAdvanceTime);
-	unique_ptr<Game> game(new Game(config.getInt("grid-width", 10), config.getInt("grid-height", 10)));
-
 	double fixedTimeStep = 1 / 60.f;
 	double accumulatedTime = 0.;
 	double lastFrameTime = glfwGetTime();
@@ -33,17 +23,22 @@ void run(GLFWwindow* window) {
 	while (!glfwWindowShouldClose(window)) {
 		accumulatedTime += glfwGetTime() - lastFrameTime;
 		lastFrameTime = glfwGetTime();
+
 		while (accumulatedTime >= fixedTimeStep) {
 			accumulatedTime -= fixedTimeStep;
+
 			if (!gConsole->isOpen()) {
 				gInput.update(window);
 			}
-			game->update((float)fixedTimeStep);
+
+			gScenes->update((float)fixedTimeStep);
 		}
 
 		glClear(GL_COLOR_BUFFER_BIT);
-		game->renderDebug();
+
+		gScenes->render();
 		gConsole->render();
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 #ifdef WIN32
@@ -53,6 +48,7 @@ void run(GLFWwindow* window) {
 }
 
 void onKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	// Update the debug console based on the received key event
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		if (key == GLFW_KEY_F1) {
 			gConsole->toggleOpen();
@@ -88,11 +84,11 @@ void onCharacterEvent(GLFWwindow* window, unsigned int ch) {
 }
 
 int main() {
-	GLFWwindow* window;
-
-	if (!glfwInit())
+	if (!glfwInit()) {
 		return -1;
+	}
 
+	// Setup OpenGL window
 	gConfig.addFile("data/settings.ini"); // TODO: make cwd data directory
 	auto& config = gConfig["application"];
 	int width = config.getInt("width", 800);
@@ -103,7 +99,7 @@ int main() {
 		<< (fullscreen ? "Fullscreen " : "Windowed ")
 		<< width << 'x' << height << endl;
 
-	window = glfwCreateWindow(width, height, "Isolated", fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(width, height, "Isolated", fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
 
 	if (!window) {
 		glfwTerminate();
@@ -113,15 +109,25 @@ int main() {
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, onKeyEvent);
 	glfwSetCharCallback(window, onCharacterEvent);
+
+	// Initialize the debug font
 	gDebugFont.reset(new DebugFont());
 	int fontScale = gConfig["debug"].getInt("console-font-scale", 2);
+
+	// Initialize the console
 	gConsole.reset(new DebugConsole(width, height / 2, width, height, fontScale));
 
+	// Initialize the input mappings
 	gConfig.addFile("data/controls.ini");
 	gInput.loadMappingFromConfig();
 
+	// Initialize the scene stack
+	gScenes.reset(new SceneStack());
+	gScenes->push(make_shared<SceneLocalGame>());
+
 	run(window);
 
+	gScenes.reset();
 	gDebugFont.reset();
 	gConsole.reset();
 	glfwTerminate();

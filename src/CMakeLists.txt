@@ -9,6 +9,7 @@ add_executable(isolated
 	Input.h Input.cpp
 	Main.cpp
 	Player.h Player.cpp
+	Scene.h Scene.cpp
 	Time.h
 	Wall.h Wall.cpp)
 
