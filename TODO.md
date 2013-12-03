@@ -35,8 +35,8 @@
 * AI
 
 # Usability
-* Debug font
-* Load input mappings from config
+* ~~Debug font~~
+* ~~Load input mappings from config~~
 * Joystick support
 * Game configuration menu
 * Saving configuration options
@@ -53,9 +53,9 @@
 
 # Code 
 * ~~Assign unique Entity IDs to prepare for networking~~
-* Allow comments at the end of lines in config files
+* ~~Allow comments at the end of lines in config files~~
 * Explicit registration/creation of config variables (get rid of having to provide default, type checking)
-  Maybe throw an exception if you try to get a variable that doesn't exits
+  Maybe throw an exception if you try to get a variable that doesn't exist
 * Logger based on ostream
 * Proper rendering separate from game state classes
 * (De)serialization of game objects (Entities, Timers, Game)

@@ -117,6 +117,9 @@ int main() {
 	int fontScale = gConfig["debug"].getInt("console-font-scale", 2);
 	gConsole.reset(new DebugConsole(width, height / 2, width, height, fontScale));
 
+	gConfig.addFile("data/controls.ini");
+	gInput.loadMappingFromConfig();
+
 	run(window);
 
 	gDebugFont.reset();

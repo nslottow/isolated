@@ -95,6 +95,9 @@ void Config::addFile(const char* path, ostream& errorStream) {
 	for (int lineNumber = 0; in.good(); ++lineNumber) {
 		getline(in, inputLine);
 
+		// Remove trailing comments
+		inputLine = inputLine.substr(0, inputLine.find_first_of(';'));
+
 		// Parse the first word on the line as the key
 		auto keyStartPos = inputLine.find_first_not_of(whitespace);
 		if (keyStartPos == string::npos) {
@@ -105,11 +108,6 @@ void Config::addFile(const char* path, ostream& errorStream) {
 		auto keyEndPos = inputLine.find_first_of(whitespace, keyStartPos);
 		key = inputLine.substr(keyStartPos, keyEndPos - keyStartPos);
 		transform(key.begin(), key.end(), key.begin(), ::tolower);
-
-		// Skip commented lines
-		if (key[0] == ';') {
-			continue;
-		}
 
 		// Parse section header
 		if (key[0] == '[' && *key.rbegin() == ']') {

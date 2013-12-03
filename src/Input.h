@@ -2,6 +2,7 @@
 #define INPUT_H
 
 #include <map>
+#include <string>
 #include <vector>
 
 enum InputType {
@@ -56,9 +57,11 @@ inline bool operator<(const JoyAxis& a, const JoyAxis& b) {
 }
 
 struct GLFWwindow;
+class ConfigSection;
 
 class Input {
 private:
+	std::map<std::string, int> mNameKeyMap;
 	std::map<InputAxis, InputType> mInputTypeMap;
 	std::map<int, InputAxis> mKeyMap;
 	std::map<JoyButton, InputAxis> mJoyButtonMap;
@@ -66,7 +69,7 @@ private:
 	std::vector<PlayerInputState> mInputStates;
 
 public:
-	static const int kMaxLocalPlayers = 4;
+	static const int kMaxLocalPlayers = 2;
 
 	Input();
 
@@ -83,6 +86,9 @@ public:
 	void addJoyAxisMapping(int joyId, int axis, char sign, int playerId, PlayerInput input);
 	void removeMapping(int playerId, PlayerInput input);
 	void loadMappingFromConfig();
+
+private:
+	void loadInputFromConfig(ConfigSection& config, int playerId, const char* inputName, PlayerInput input);
 };
 
 extern Input gInput;

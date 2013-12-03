@@ -46,6 +46,7 @@ private:
 
 public:
 	ConfigSection& operator[](const char* sectionName) { return mSections[sectionName]; }
+	ConfigSection& operator[](const std::string& sectionName) { return mSections[sectionName]; }
 
 	void addFile(const char* path); // Loads values from a file using cerr to print errors
 	void addFile(const char* path, std::ostream& errorStream);

@@ -39,7 +39,6 @@ protected:
 	Color mTextColor;
 	Color mBackgroundColor;
 	Color mCursorColor;
-	
 	// TODO: History
 	bool mOpen;
 
@@ -51,7 +50,6 @@ public:
 	 * Note: The rendering context must be initialized before instantiating a console
 	 */
 	AbstractDebugConsole(int width, int height, int screenWidth, int screenHeight, int fontScale);
-
 	virtual ~AbstractDebugConsole();
 
 	bool isOpen() const { return mOpen; }
@@ -88,6 +86,9 @@ public:
 	void copySelectionToClipboard();
 };
 
+// TODO: C++ stream-like interface for logging
+// TODO: Interface for changing text color
+
 extern std::shared_ptr<AbstractDebugConsole> gConsole;
 
 #if defined(DEBUG_CONSOLE_RENDER_METHOD_QUADS)
@@ -96,12 +97,6 @@ extern std::shared_ptr<AbstractDebugConsole> gConsole;
  * Uses immediate mode rendering
  */
 class DebugConsole : public AbstractDebugConsole {
-private:
-	float mRenderPosX;
-	float mRenderPosY;
-
-	void renderChar(char ch);
-
 public:
 	DebugConsole(int width, int height, int screenWidth, int screenHeight, int fontScale = 1) :
 		AbstractDebugConsole(width, height, screenWidth, screenHeight, fontScale) {}
@@ -113,13 +108,12 @@ public:
 
 /**
  * Uses vertex arrays for keeping track of text
- * Takes up ~256KB of memory
  */
 class DebugConsole : public AbstractDebugConsole {
 private:
 	struct Vertex {
 		float x, y;
-		float t, s;
+		float s, t;
 	};
 
 	struct TextLine {
