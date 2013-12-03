@@ -114,7 +114,8 @@ int main() {
 	glfwSetKeyCallback(window, onKeyEvent);
 	glfwSetCharCallback(window, onCharacterEvent);
 	gDebugFont.reset(new DebugFont());
-	gConsole.reset(new DebugConsole(width, height / 2, width, height, 2));
+	int fontScale = gConfig["debug"].getInt("console-font-scale", 2);
+	gConsole.reset(new DebugConsole(width, height / 2, width, height, fontScale));
 
 	run(window);
 
