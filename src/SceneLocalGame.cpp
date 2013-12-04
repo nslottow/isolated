@@ -1,5 +1,6 @@
 #include "SceneLocalGame.h"
 
+#include <GLFW/glfw3.h>
 #include "Config.h"
 #include "Game.h"
 #include "Wall.h"
@@ -17,6 +18,12 @@ void SceneLocalGame::onActivate() {
 
 void SceneLocalGame::onDeactivate() {
 
+}
+
+void SceneLocalGame::onKeyEvent(int key, int action, int mods) {
+	if (key == GLFW_KEY_ESCAPE) {
+		gScenes->pop();
+	}
 }
 
 void SceneLocalGame::update(float dt) {

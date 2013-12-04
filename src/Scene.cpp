@@ -19,6 +19,12 @@ void SceneStack::pop() {
 	mScenes.pop();
 }
 
+void SceneStack::onKeyEvent(int key, int action, int mods) {
+	if (!mScenes.empty()) {
+		mScenes.top()->onKeyEvent(key, action, mods);
+	}
+}
+
 void SceneStack::update(float dt) {
 	if (!mScenes.empty()) {
 		mScenes.top()->update(dt);

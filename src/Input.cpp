@@ -109,32 +109,52 @@ Input::Input() :
 
 bool Input::isActive(int playerId, PlayerInput input) const {
 	assert(input < INPUT_COUNT);
+	assert(playerId < kMaxLocalPlayers);
 	return mInputStates[playerId].current[input];
+}
+
+bool Input::isActive(PlayerInput input) const {
+	bool result = false;
+
+	for (int playerId = 0; playerId < kMaxLocalPlayers; ++playerId) {
+		result |= isActive(playerId, input);
+	}
+
+	return result;
 }
 
 bool Input::justActivated(int playerId, PlayerInput input) const {
 	assert(input < INPUT_COUNT);
+	assert(playerId < kMaxLocalPlayers);
 	auto& state = mInputStates[playerId];
 	return state.current[input] && !state.previous[input];
 }
 
+bool Input::justActivated(PlayerInput input) const {
+	bool result = false;
+
+	for (int playerId = 0; playerId < kMaxLocalPlayers; ++playerId) {
+		result |= justActivated(playerId, input);
+	}
+
+	return result;
+}
+
 bool Input::justDeactivated(int playerId, PlayerInput input) const {
 	assert(input < INPUT_COUNT);
+	assert(playerId < kMaxLocalPlayers);
 	auto& state = mInputStates[playerId];
 	return !state.current[input] && state.previous[input];
 }
 
-void Input::onKeyEvent(int key, int scancode, int action, int mods) {
-	// Ignore key repeat events
-	if (action == GLFW_REPEAT || action == GLFW_RELEASE) {
-		return;
+bool Input::justDeactivated(PlayerInput input) const {
+	bool result = false;
+
+	for (int playerId = 0; playerId < kMaxLocalPlayers; ++playerId) {
+		result |= justDeactivated(playerId, input);
 	}
 
-	auto it = mKeyMap.find(key);
-	if (it != mKeyMap.end()) {
-		auto& axis = it->second;
-		mInputStates[axis.playerId].current[axis.input] = action == GLFW_PRESS;
-	}
+	return result;
 }
 
 void Input::update(GLFWwindow* window) {

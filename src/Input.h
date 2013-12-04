@@ -69,15 +69,17 @@ private:
 	std::vector<PlayerInputState> mInputStates;
 
 public:
-	static const int kMaxLocalPlayers = 2;
+	static const int kMaxLocalPlayers = 4;
 
 	Input();
 
-	bool justActivated(int playerId, PlayerInput input) const;
-	bool justDeactivated(int playerId, PlayerInput input) const;
 	bool isActive(int playerId, PlayerInput input) const;
+	bool isActive(PlayerInput input) const;
+	bool justActivated(int playerId, PlayerInput input) const;
+	bool justActivated(PlayerInput input) const;
+	bool justDeactivated(int playerId, PlayerInput input) const;
+	bool justDeactivated(PlayerInput input) const;
 
-	void onKeyEvent(int key, int scancode, int action, int mods);
 	void update(GLFWwindow* window);
 
 	void clearMappings();

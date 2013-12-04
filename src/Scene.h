@@ -10,6 +10,8 @@ public:
 
 	virtual void onDeactivate() {}
 
+	virtual void onKeyEvent(int key, int action, int mods) {}
+
 	virtual void update(float dt) {}
 
 	virtual void render() {}
@@ -27,6 +29,8 @@ public:
 	void push(ScenePtr scene);
 
 	void pop();
+
+	void onKeyEvent(int key, int action, int mods);
 
 	void update(float dt);
 

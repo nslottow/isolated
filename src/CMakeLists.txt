@@ -10,6 +10,8 @@ add_executable(isolated
 	Main.cpp
 	Player.h Player.cpp
 	Scene.h Scene.cpp
+	SceneGameSetup.h SceneGameSetup.cpp
+	SceneLocalGame.h SceneLocalGame.cpp
 	Time.h
 	Wall.h Wall.cpp)
 

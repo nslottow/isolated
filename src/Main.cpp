@@ -2,7 +2,7 @@
 #include "DebugFont.h"
 #include "DebugConsole.h"
 #include "Input.h"
-#include "SceneLocalGame.h"
+#include "SceneGameSetup.h"
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
 #include <cstdlib>
@@ -20,7 +20,7 @@ void run(GLFWwindow* window) {
 	double accumulatedTime = 0.;
 	double lastFrameTime = glfwGetTime();
 
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window) && !gScenes->isEmpty()) {
 		accumulatedTime += glfwGetTime() - lastFrameTime;
 		lastFrameTime = glfwGetTime();
 
@@ -48,6 +48,11 @@ void run(GLFWwindow* window) {
 }
 
 void onKeyEvent(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	// Pass the event to the current scene
+	if (!gConsole->isOpen()) {
+		gScenes->onKeyEvent(key, action, mods);
+	}
+
 	// Update the debug console based on the received key event
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		if (key == GLFW_KEY_F1) {
@@ -123,7 +128,7 @@ int main() {
 
 	// Initialize the scene stack
 	gScenes.reset(new SceneStack());
-	gScenes->push(make_shared<SceneLocalGame>());
+	gScenes->push(make_shared<SceneGameSetup>(width, height));
 
 	run(window);
 

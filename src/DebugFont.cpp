@@ -39,9 +39,15 @@ Vec2 getStringDimensions(const char* str) {
 	return Vec2((float)glyphsX * DebugFont::kGlyphWidth, (float)glyphsY * DebugFont::kGlyphHeight);
 }
 
-void DebugFont::renderString(const char* str, bool centered) {
+void DebugFont::renderString(const char* str, bool centerHorizontal) {
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, mTexture);
+
+	if (centerHorizontal) {
+		auto dimensions = getStringDimensions(str);
+		glPushMatrix();
+		glTranslatef(-dimensions.x / 2.f, 0.f, 0.f);
+	}
 
 	// Render each character as a quad
 	glBegin(GL_QUADS);
@@ -82,9 +88,11 @@ void DebugFont::renderString(const char* str, bool centered) {
 		currentX += kGlyphWidth;
 	}
 	
-	
 	glEnd();
-	// TODO: enable centering
+	
+	if (centerHorizontal) {
+		glPopMatrix();
+	}
 
 	glDisable(GL_TEXTURE_2D);
 }

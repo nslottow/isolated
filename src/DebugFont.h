@@ -7,6 +7,8 @@
 class DebugFont {
 private:
 	GLuint mTexture;
+	int mScreenWidth;
+	int mScreenHeight;
 
 public:
 	static const int kTextureWidth = 128;
@@ -21,7 +23,7 @@ public:
 
 	~DebugFont();
 
-	void renderString(const char* str, bool centered = false);
+	void renderString(const char* str, bool centerHorizontal = false);
 };
 
 extern std::shared_ptr<DebugFont> gDebugFont;

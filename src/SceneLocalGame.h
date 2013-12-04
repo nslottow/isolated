@@ -14,6 +14,8 @@ public:
 
 	void onDeactivate() override;
 
+	void onKeyEvent(int key, int action, int mods) override;
+
 	void update(float dt) override;
 
 	void render() override;
