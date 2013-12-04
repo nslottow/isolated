@@ -4,9 +4,9 @@
 * Strafing while building walls
 * Optional: Gradually falling blocks post-construction to free up the board
 * Game modes
+  * Territory (Fill the board)
   * Stock
-  * Kills
-  * Fill
+  * Smash (Kills)
 * Respawn cells that can't be built on. Have the player spawn randomly or
   choose where to respawn.
 * Death cells (black holes)
@@ -38,7 +38,7 @@
 * ~~Debug font~~
 * ~~Load input mappings from config~~
 * Joystick support
-* Game configuration menu
+* ~~Game configuration menu~~
 * Saving configuration options
 * Video options configuration menu
 * Map editor
