@@ -15,8 +15,8 @@ void DebugMenuItem::render() {
 	gDebugFont->renderString(itemStr.c_str());
 }
 
-DebugMenuItemInt::DebugMenuItemInt(const char* category, const char* key, int min, int max) :
-	DebugMenuItem(category, key),
+DebugMenuItemInt::DebugMenuItemInt(const char* category, const char* key, int min, int max, bool active) :
+	DebugMenuItem(category, key, active),
 	mMin(min),
 	mMax(max),
 	mSpeedupTime(0.5f),
@@ -67,8 +67,8 @@ void DebugMenuItemInt::update(float dt) {
 	}
 }
 
-DebugMenuItemString::DebugMenuItemString(const char* category, const char* key, initializer_list<const char*> options) :
-	DebugMenuItem(category, key),
+DebugMenuItemString::DebugMenuItemString(const char* category, const char* key, initializer_list<const char*> options, bool active) :
+	DebugMenuItem(category, key, active),
 	mSelectionIndex(-1)
 {
 	assert(options.size());
@@ -113,12 +113,20 @@ DebugMenu::~DebugMenu() {
 }
 
 void DebugMenu::update(float dt) {
+	while (!mItems[mSelectionIndex]->isActive()) {
+		mSelectionIndex = (mSelectionIndex + 1) % mItems.size();
+	}
+
 	if (gInput.justActivated(INPUT_UP)) {
-		mSelectionIndex = (mSelectionIndex - 1) % mItems.size();
+		do {
+			mSelectionIndex = (mSelectionIndex - 1) % mItems.size();
+		} while (!mItems[mSelectionIndex]->isActive());
 	}
 
 	if (gInput.justActivated(INPUT_DOWN)) {
-		mSelectionIndex = (mSelectionIndex + 1) % mItems.size();
+		do {
+			mSelectionIndex = (mSelectionIndex + 1) % mItems.size();
+		} while (!mItems[mSelectionIndex]->isActive());
 	}
 
 	assert(!mItems.empty());
@@ -130,7 +138,9 @@ void DebugMenu::render() {
 	for (size_t i = 0; i < mItems.size(); ++i) {
 		auto item = mItems[i];
 
-		if (mSelectionIndex == i) {
+		if (!item->isActive()) {
+			glColor4fv((GLfloat*)&mDisabledColor);
+		} else if (mSelectionIndex == i) {
 			glColor4fv((GLfloat*)&mSelectedColor);
 		} else {
 			glColor4fv((GLfloat*)&mUnselectedColor);
@@ -146,10 +156,11 @@ SceneGameSetup::SceneGameSetup(int screenWidth, int screenHeight) :
 	mScreenWidth(screenWidth), mScreenHeight(screenHeight),
 	mFontScale(3.f)
 {
-	mMenu.addItem(new DebugMenuItemString("defaults", "mode", { "territory", "stock", "smash" }));
-	mMenu.addItem(new DebugMenuItemString("defaults", "fill-rule", { "empty-rectangles", "empty-regions", "3-surround" }));
+	mMenu.addItem(new DebugMenuItemString("defaults", "mode", { "territory", "stock", "smash" }, false));
+	mMenu.addItem(new DebugMenuItemString("defaults", "fill-rule", { "empty-rectangles", "empty-regions", "3-surround" }, false));
+	mMenu.addItem(new DebugMenuItemString("defaults", "fill-method", { "instantaneous", "rings", "spiral", "sweep" }, false));
 	mMenu.addItem(new DebugMenuItemInt("defaults", "grid-size", 2, 100));
-	mMenu.addItem(new DebugMenuItemInt("defaults", "time-limit", 0, 600));
+	mMenu.addItem(new DebugMenuItemInt("defaults", "time-limit", 0, 600, false));
 	mMenu.addItem(new DebugMenuItemInt("defaults", "wall-strength", 1, 10));
 	mMenu.addItem(new DebugMenuItemInt("defaults", "stock", 1, 100));
 }

@@ -16,8 +16,8 @@ protected:
 	bool mActive;
 
 public:
-	DebugMenuItem(const char* category, const char* key) :
-		mCategory(category), mKey(key), mActive(true) {}
+	DebugMenuItem(const char* category, const char* key, bool active) :
+		mCategory(category), mKey(key), mActive(active) {}
 
 	bool isActive() const { return mActive; }
 	void setActive(bool active) { mActive = active; }
@@ -37,7 +37,7 @@ private:
 	bool mKeyDown;
 
 public:
-	DebugMenuItemInt(const char* category, const char* key, int min, int max);
+	DebugMenuItemInt(const char* category, const char* key, int min, int max, bool active = true);
 
 	void update(float dt) override;
 };
@@ -48,7 +48,7 @@ private:
 	int mSelectionIndex;
 
 public:
-	DebugMenuItemString(const char* category, const char* key, std::initializer_list<const char*> options);
+	DebugMenuItemString(const char* category, const char* key, std::initializer_list<const char*> options, bool active = true);
 
 	void update(float dt) override;
 };
@@ -60,12 +60,14 @@ private:
 	std::vector<DebugMenuItem*> mItems;
 	Color mUnselectedColor;
 	Color mSelectedColor;
+	Color mDisabledColor;
 
 public:
 	DebugMenu() :
 		mSelectionIndex(0),
-		mUnselectedColor{.5f, .5f, .5f, .5f},
-		mSelectedColor{.2f, .8f, 1.f, 1.f} {}
+		mUnselectedColor(.5f, .5f, .5f, .5f),
+		mSelectedColor(.2f, .8f, 1.f, 1.f),
+		mDisabledColor(.2f, .2f, .2f, .5f) {}
 
 	~DebugMenu();
 
