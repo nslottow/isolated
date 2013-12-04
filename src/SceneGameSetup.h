@@ -7,12 +7,7 @@
 #include <string>
 #include <vector>
 
-// Number of players
-// Grid width, height
-// Mode
-// Time limit
-// Stock
-// Fill rule
+// HACK: This whole scene is a hack
 
 class DebugMenuItem {
 protected:

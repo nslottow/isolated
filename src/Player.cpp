@@ -1,5 +1,6 @@
 #include "Player.h"
 
+#include "Config.h"
 #include "Game.h"
 #include "Input.h"
 #include <GLFW/glfw3.h>
@@ -17,9 +18,9 @@ Player::Player(Game& game, int entityId, int playerId) :
 	mPlayerId(playerId),
 	mMeleeStrength(1),
 	speed(5.f),
-	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime),
-	mStock(10)
+	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime)
 {
+	mStock = gConfig["defaults"].getInt("stock", 10);
 	size = Vec2(1.f, 1.f);
 }
 
