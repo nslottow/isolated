@@ -18,7 +18,9 @@ void DebugMenuItem::render() {
 DebugMenuItemInt::DebugMenuItemInt(const char* category, const char* key, int min, int max) :
 	DebugMenuItem(category, key),
 	mMin(min),
-	mMax(max)
+	mMax(max),
+	mSpeedupTime(0.5f),
+	mKeyDown(false)
 {
 	mValue = gConfig[mCategory].getInt(mKey, mMin);
 }
@@ -28,14 +30,30 @@ void DebugMenuItemInt::update(float dt) {
 
 	int oldValue = mValue;
 
-	if (gInput.isActive(INPUT_LEFT)) {
+	if (gInput.justActivated(INPUT_LEFT) || gInput.justActivated(INPUT_RIGHT)) {
+		mKeyDown = true;
+		mTimeUntilSpeedup = mSpeedupTime;
+	} else if (gInput.justDeactivated(INPUT_LEFT) || gInput.justDeactivated(INPUT_RIGHT)) {
+		mKeyDown = false;
+	}
+
+	bool fastScroll = false;
+	if (mKeyDown) {
+		mTimeUntilSpeedup -= dt;
+		if (mTimeUntilSpeedup <= 0.f) {
+			mTimeUntilSpeedup = 0.f;
+			fastScroll = true;
+		}
+	}
+
+	if (gInput.justActivated(INPUT_LEFT) || (fastScroll && gInput.isActive(INPUT_LEFT))) {
 		--mValue;
 		if (mValue < mMin) {
 			mValue = mMin;
 		}
 	}
-	
-	if (gInput.isActive(INPUT_RIGHT)) {
+
+	if (gInput.justActivated(INPUT_RIGHT) || (fastScroll && gInput.isActive(INPUT_RIGHT))) {
 		++mValue;
 		if (mValue > mMax) {
 			mValue = mMax;

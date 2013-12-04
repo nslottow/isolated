@@ -37,6 +37,9 @@ private:
 	int mValue;
 	int mMin;
 	int mMax;
+	float mSpeedupTime;
+	float mTimeUntilSpeedup;
+	bool mKeyDown;
 
 public:
 	DebugMenuItemInt(const char* category, const char* key, int min, int max);
