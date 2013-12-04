@@ -56,6 +56,9 @@
 * ~~Allow comments at the end of lines in config files~~
 * Explicit registration/creation of config variables (get rid of having to provide default, type checking)
   Maybe throw an exception if you try to get a variable that doesn't exist
+* Fix DebugFont interface. Need to decide on coordinate systems, where to put size of font, color.
+* Fix coordinate system for rendering, pick aspect ratio, use virtual resolution
+  (native resolution with chosen glOrtho resolution)
 * Logger based on ostream
 * Proper rendering separate from game state classes
 * (De)serialization of game objects (Entities, Timers, Game)
