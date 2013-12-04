@@ -13,7 +13,7 @@ void SceneLocalGame::onActivate() {
 	Wall::sFallTime = config.getFloat("wall-fall-time", Wall::sFallTime);
 	Wall::sMaxStrength = config.getInt("wall-strength", Wall::sMaxStrength);
 	Player::sBuildAdvanceTime = config.getFloat("build-advance-time", Player::sBuildAdvanceTime);
-	mGame.reset(new Game(config.getInt("grid-width", 10), config.getInt("grid-height", 10)));
+	mGame.reset(new Game(config.getInt("grid-size", 10), config.getInt("grid-size", 10)));
 }
 
 void SceneLocalGame::onDeactivate() {
