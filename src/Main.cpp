@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <sstream>
 
 #ifdef WIN32
 extern "C" void __stdcall Sleep(int millis);
@@ -96,13 +97,23 @@ int main() {
 	// Setup OpenGL window
 	gConfig.addFile("data/settings.ini"); // TODO: make cwd data directory
 	auto& config = gConfig["application"];
-	int width = config.getInt("width", 800);
+	int width = config.getInt("width", 600);
 	int height = config.getInt("height", 600);
 	bool fullscreen = config.getBool("fullscreen");
 
-	cout << "Display mode: "
-		<< (fullscreen ? "Fullscreen " : "Windowed ")
-		<< width << 'x' << height << endl;
+	if (fullscreen) {
+		auto videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		width = videoMode->width;
+		height = videoMode->height;
+
+		// HACK
+		stringstream converter;
+		converter << width;
+		config.setProperty("width", converter.str().c_str());
+		converter.str("");
+		converter << height;
+		config.setProperty("height", converter.str().c_str());
+	}
 
 	GLFWwindow* window = glfwCreateWindow(width, height, "Isolated", fullscreen ? glfwGetPrimaryMonitor() : nullptr, nullptr);
 

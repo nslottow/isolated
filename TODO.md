@@ -3,7 +3,7 @@
 * Wall materials as resources
 * Strafing while building walls
 * Optional: Gradually falling blocks post-construction to free up the board
-* Game modes
+* Game modes (win conditions and victory notification)
   * Territory (Fill the board)
   * Stock
   * Smash (Kills)

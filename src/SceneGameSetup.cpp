@@ -147,7 +147,7 @@ void DebugMenu::render() {
 		}
 
 		item->render();
-		glTranslatef(0.f, -DebugFont::kGlyphHeight - 1.f, 0.f);
+		glTranslatef(0.f, -DebugFont::kGlyphHeight - 3.f, 0.f);
 	}
 	glPopMatrix();
 }
