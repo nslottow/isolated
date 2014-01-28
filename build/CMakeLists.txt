@@ -29,5 +29,10 @@ include_directories(../extlib/glfw/include)
 add_subdirectory(../extlib/soil soil)
 include_directories(../extlib)
 
+# Include boost
+set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
 # Build the src directory
 add_subdirectory(../src isolated)
