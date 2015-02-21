@@ -20,14 +20,19 @@ private:
 	int mPlayerId;
 	int mStock;
 	char mMeleeStrength;
+	int mSelectionX, mSelectionY;
+	float mMovementHoldTime;
 	Direction mFacing;
 
+	// Wall building state
 	WallPtr mWall;
 	int mWallStreamX, mWallStreamY;
 	Timer mBuildAdvanceTimer;
 
 public:
 	static float sBuildAdvanceTime;
+	static float sAttackTapTime;
+	static float sPushStartTime;
 
 	int numWalls;
 	char wallStrength;

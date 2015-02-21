@@ -24,6 +24,7 @@ enum PlayerInput {
 struct PlayerInputState {
 	bool current[INPUT_COUNT];
 	bool previous[INPUT_COUNT];
+	float holdTime[INPUT_COUNT];
 
 	PlayerInputState();
 };
@@ -73,6 +74,7 @@ public:
 
 	Input();
 
+	bool isActive(int playerId, PlayerInput input, float& holdTime) const;
 	bool isActive(int playerId, PlayerInput input) const;
 	bool isActive(PlayerInput input) const;
 	bool justActivated(int playerId, PlayerInput input) const;
@@ -80,7 +82,7 @@ public:
 	bool justDeactivated(int playerId, PlayerInput input) const;
 	bool justDeactivated(PlayerInput input) const;
 
-	void update(GLFWwindow* window);
+	void update(GLFWwindow* window, double dt);
 
 	void clearMappings();
 	void addKeyMapping(int code, int playerId, PlayerInput input);

@@ -29,7 +29,7 @@ void run(GLFWwindow* window) {
 			accumulatedTime -= fixedTimeStep;
 
 			if (!gConsole->isOpen()) {
-				gInput.update(window);
+				gInput.update(window, fixedTimeStep);
 			}
 
 			gScenes->update((float)fixedTimeStep);

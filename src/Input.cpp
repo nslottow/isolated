@@ -16,6 +16,7 @@ PlayerInputState::PlayerInputState() {
 	for (int i = 0; i < INPUT_COUNT; ++i) {
 		current[i] = false;
 		previous[i] = false;
+		holdTime[i] = 0.f;
 	}
 }
 
@@ -107,6 +108,14 @@ Input::Input() :
 	addKeyMapping(GLFW_KEY_2, 1, INPUT_MELEE);
 }
 
+bool Input::isActive(int playerId, PlayerInput input, float& holdTime) const {
+	assert(input < INPUT_COUNT);
+	assert(playerId < kMaxLocalPlayers);
+	auto& state = mInputStates[playerId];
+	holdTime = state.holdTime[input];
+	return state.current[input];
+}
+
 bool Input::isActive(int playerId, PlayerInput input) const {
 	assert(input < INPUT_COUNT);
 	assert(playerId < kMaxLocalPlayers);
@@ -157,7 +166,7 @@ bool Input::justDeactivated(PlayerInput input) const {
 	return result;
 }
 
-void Input::update(GLFWwindow* window) {
+void Input::update(GLFWwindow* window, double dt) {
 	for (auto& state : mInputStates) {
 		for (int i = 0; i < INPUT_COUNT; ++i) {
 			state.previous[i] = state.current[i];
@@ -168,7 +177,17 @@ void Input::update(GLFWwindow* window) {
 	for (auto& p : mKeyMap) {
 		auto key = p.first;
 		auto& axis = p.second;
-		mInputStates[axis.playerId].current[axis.input] = glfwGetKey(window, key) == GLFW_PRESS;
+		auto& state = mInputStates[axis.playerId];
+
+		bool pressed = glfwGetKey(window, key) == GLFW_PRESS;
+		state.current[axis.input] = pressed;
+
+		if (pressed && state.previous[axis.input]) {
+			// TODO: Store initial press time instead of hold time to make this more accurate
+			state.holdTime[axis.input] += (float)dt;
+		} else {
+			state.holdTime[axis.input] = 0.f;
+		}
 	}
 }
 

@@ -10,12 +10,15 @@
 using namespace std;
 
 float Player::sBuildAdvanceTime = 0.3f;
+float Player::sAttackTapTime = 0.2f;
+float Player::sPushStartTime = 0.4f;
 
 Player::Player(Game& game, int entityId, int playerId) :
 	Entity(entityId, ENTITY_PLAYER),
 	mGame(game),
 	mState(PLAYER_NORMAL),
 	mPlayerId(playerId),
+	mMovementHoldTime(0.f),
 	mMeleeStrength(1),
 	speed(5.f),
 	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime)
@@ -97,25 +100,47 @@ void Player::update(float dt) {
 	if (mState == PLAYER_NORMAL) {
 		// Handle movement
 		Vec2 movementDir;
-		if (gInput.isActive(mPlayerId, INPUT_UP)) {
+		float holdTime = -1.f;
+		float minHoldTime = 2e32f;
+
+		if (gInput.isActive(mPlayerId, INPUT_UP, holdTime)) {
 			movementDir.y += 1.f;
-			mFacing = DIR_UP;
+			if (holdTime < minHoldTime) {
+				mFacing = DIR_UP;
+				minHoldTime = holdTime;
+			}
 		}
-		if (gInput.isActive(mPlayerId, INPUT_DOWN)) {
+		if (gInput.isActive(mPlayerId, INPUT_DOWN, holdTime)) {
 			movementDir.y -= 1.f;
-			mFacing = DIR_DOWN;
+			if (holdTime < minHoldTime) {
+				mFacing = DIR_DOWN;
+				minHoldTime = holdTime;
+			}
 		}
-		if (gInput.isActive(mPlayerId, INPUT_LEFT)) {
+		if (gInput.isActive(mPlayerId, INPUT_LEFT, holdTime)) {
 			movementDir.x -= 1.f;
-			mFacing = DIR_LEFT;
+			if (holdTime < minHoldTime) {
+				mFacing = DIR_LEFT;
+				minHoldTime = holdTime;
+			}
 		}
-		if (gInput.isActive(mPlayerId, INPUT_RIGHT)) {
+		if (gInput.isActive(mPlayerId, INPUT_RIGHT, holdTime)) {
 			movementDir.x += 1.f;
-			mFacing = DIR_RIGHT;
+			if (holdTime < minHoldTime) {
+				mFacing = DIR_RIGHT;
+				minHoldTime = holdTime;
+			}
+		}
+
+		if (minHoldTime < 2e32f) {
+			mMovementHoldTime = minHoldTime;
 		}
 
 		// TODO: Strafing state or different strafing speed
 		position += movementDir * speed * dt;
+
+		// Update selection
+		getSelection(mSelectionX, mSelectionY);
 
 		// Handle creating walls
 		if (gInput.justActivated(mPlayerId, INPUT_WALL)) {
@@ -123,10 +148,24 @@ void Player::update(float dt) {
 		}
 
 		// Handle attacking walls
-		if (gInput.justActivated(mPlayerId, INPUT_MELEE)) {
-			int selectionX, selectionY; // TODO: these should probably be member variables
-			getSelection(selectionX, selectionY);
-			mGame.attackWall(selectionX, selectionY, mMeleeStrength);
+		PlayerInput attackInput;
+		switch (mFacing) {
+		case DIR_UP:
+			attackInput = INPUT_UP;
+			break;
+		case DIR_DOWN:
+			attackInput = INPUT_DOWN;
+			break;
+		case DIR_LEFT:
+			attackInput = INPUT_LEFT;
+			break;
+		case DIR_RIGHT:
+			attackInput = INPUT_RIGHT;
+			break;
+		}
+
+		if (gInput.justDeactivated(attackInput) && mMovementHoldTime < sAttackTapTime) {
+			mGame.attackWall(mSelectionX, mSelectionY, mMeleeStrength);
 		}
 	}
 	
