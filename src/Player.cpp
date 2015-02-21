@@ -154,11 +154,30 @@ void Player::update(float dt) {
 
 void Player::renderDebug() const {
 	// Render the player body
+	float angle = 0.f;
+	switch (mFacing) {
+	case DIR_UP:
+		break;
+	case DIR_LEFT:
+		angle = 90.f;
+		break;
+	case DIR_DOWN:
+		angle = 180.f;
+		break;
+	case DIR_RIGHT:
+		angle = 270.f;
+		break;
+	}
+
+	glPushMatrix();
+	glTranslatef(position.x + size.x / 2.f, position.y + size.y / 2.f, 0.f);
+	glRotatef(angle, 0.f, 0.f, 1.f);
 	glBegin(GL_TRIANGLES);
-	glVertex2f(position.x + 0.f, position.y);
-	glVertex2f(position.x + size.x, position.y);
-	glVertex2f(position.x + size.x / 2.f, position.y + size.y);
+	glVertex2f(-size.x / 2.f, -size.y / 2.f); // Bottom left
+	glVertex2f(size.x / 2.f, -size.y / 2.f); // Bottom right
+	glVertex2f(0.f, size.y / 2.f); // Top
 	glEnd();
+	glPopMatrix();
 
 	// Render player stock at the top of the screen
 	glPointSize(5.f);
