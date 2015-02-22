@@ -1,11 +1,13 @@
 #include "Player.h"
 
 #include "Config.h"
+#include "DebugFont.h"
 #include "Game.h"
 #include "Input.h"
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -26,7 +28,9 @@ Player::Player(Game& game, int entityId, int playerId) :
 	speed(5.f),
 	mRespawnTimer(game.getClock(), sRespawnTime),
 	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime),
-	mProjectileAdvanceTimer(game.getClock(), sProjectileAdvanceTime)
+	mProjectileAdvanceTimer(game.getClock(), sProjectileAdvanceTime),
+	mPushTimer(game.getClock(), sPushStartTime),
+	numWalls(0)
 {
 	mStock = gConfig["defaults"].getInt("stock", 10);
 	size = Vec2(1.f, 1.f);
@@ -93,22 +97,32 @@ void Player::advanceWallStream() {
 	}
 }
 
+void Player::onWallComplete() {
+	++numWalls;
+}
+
+void Player::onWallDestroyed() {
+	--numWalls;
+}
+
 void Player::die() {
-	mState = PLAYER_NORMAL;
-	mWall.reset();
-	active = false;
-	mRespawnTimer.reset();
+	if (active) {
+		mState = PLAYER_NORMAL;
+		mWall.reset();
+		active = false;
+		mRespawnTimer.reset();
 
-	// TODO: Implement a proper respawn mechanism depending on the mode
-	int newX = rand() % mGame.getWidth();
-	int newY = rand() % mGame.getHeight();
-	position.x = (float)newX;
-	position.y = (float)newY;
+		// TODO: Implement a proper respawn mechanism depending on the mode
+		int newX = rand() % mGame.getWidth();
+		int newY = rand() % mGame.getHeight();
+		position.x = (float)newX;
+		position.y = (float)newY;
 
-	--mStock;
-	cout << "Player " << mPlayerId << " died, " << mStock << " lives left" << endl;
-	if (mStock == 0) {
-		cout << "Player " << mPlayerId << " lost" << endl;
+		--mStock;
+		cout << "Player " << mPlayerId << " died, " << mStock << " lives left" << endl;
+		if (mStock == 0) {
+			cout << "Player " << mPlayerId << " lost" << endl;
+		}
 	}
 }
 
@@ -121,6 +135,30 @@ void Player::onCollisionEnter(EntityPtr other, Vec2 pushApart) {
 		float playerArea = size.x * size.y;
 		if (absPushApartX * absPushApartY > playerArea * 0.5f) {
 			die();
+			return;
+		}
+
+		if (mSelectionX == (int)other->position.x && mSelectionY == (int)other->position.y) {
+			mPushTimer.reset();
+			mPushingWall = static_pointer_cast<Wall>(other);
+
+			mPushTargetX = mSelectionX;
+			mPushTargetY = mSelectionY;
+
+			switch (mFacing) {
+			case DIR_UP:
+				++mPushTargetY;
+				break;
+			case DIR_DOWN:
+				--mPushTargetY;
+				break;
+			case DIR_LEFT:
+				--mPushTargetX;
+				break;
+			case DIR_RIGHT:
+				++mPushTargetX;
+				break;
+			}
 		}
 	}
 }
@@ -134,13 +172,19 @@ void Player::onCollisionPersist(EntityPtr other, Vec2 pushApart) {
 		float playerArea = size.x * size.y;
 		if (absPushApartX * absPushApartY > playerArea * 0.5f) {
 			die();
+			return;
+		}
+
+		if (other == mPushingWall && mPushTimer.isExpired()) {
+			mPushingWall->beginMoveTo(mPushTargetX, mPushTargetY);
+			mPushingWall.reset();
 		}
 	}
 }
 
 void Player::update(float dt) {
 	if (!active) {
-		if (mRespawnTimer.isExpired()) {
+		if (mRespawnTimer.isExpired() && mStock > 0) {
 			active = true;
 			mGame.removeWall((int)position.x, (int)position.y);
 		}
@@ -302,7 +346,7 @@ void Player::releaseProjectileWall() {
 
 static void renderCircle(float x, float y, float r) {
 	glBegin(GL_LINE_STRIP);
-	const int steps = 32;
+	const int steps = 16;
 	const float angleStep = 6.28318531f / steps;
 	for (int i = 0; i < steps; i++) {
 		glVertex2f(x + r * cos(i * angleStep), y + r * sin(i * angleStep));
@@ -313,6 +357,18 @@ static void renderCircle(float x, float y, float r) {
 }
 
 void Player::renderDebug() const {
+	// Render player score at the top of the screen
+
+	static ostringstream converter;
+	converter.str("");
+	converter << numWalls << " / " << mGame.getWallsToWin();
+
+	glPushMatrix();
+	glTranslatef(mPlayerId * 4.f, mGame.getHeight() + 0.2f, 0.f);
+	glScalef(0.04f, 0.04f, 1.f);
+	gDebugFont->renderString(converter.str().c_str());
+	glPopMatrix();
+
 	// Render player stock at the bottom of the screen
 	glPointSize(5.f);
 	glBegin(GL_POINTS);
@@ -322,8 +378,11 @@ void Player::renderDebug() const {
 	}
 	glEnd();
 
+	// Render spawn animation if dead
 	if (!active) {
-		renderCircle(position.x + size.x / 2.f, position.y + size.y / 2.f, 0.5f / mRespawnTimer.getInterpolator());
+		if (mStock > 0) {
+			renderCircle(position.x + size.x / 2.f, position.y + size.y / 2.f, 0.5f / mRespawnTimer.getInterpolator());
+		}
 		return;
 	}
 

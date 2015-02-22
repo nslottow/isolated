@@ -99,6 +99,9 @@ private:
 	std::vector<PlayerPtr> mPlayers;
 	std::vector<int> mFreeEntityIds;
 	int mNextEntityId;
+	int mWallsToWin;
+	bool mOver;
+	std::string mOverMessage;
 
 	std::shared_ptr<IFillRule> mFillRule;
 
@@ -117,6 +120,7 @@ private:
 		mWalls[x + y * mWidth] = wall;
 	}
 
+	void setPlayerWon(int playerId);
 	void boundEntity(EntityPtr entity);
 	void updateSpatialHash();
 	void addEntityToSpatialHash(EntityPtr entity);
@@ -125,6 +129,7 @@ private:
 	void collideEntities(EntityPtr a, EntityPtr b);
 
 public:
+	int getWallsToWin() const { return mWallsToWin; }
 	int getWidth() const { return mWidth; }
 	int getHeight() const { return mHeight; }
 

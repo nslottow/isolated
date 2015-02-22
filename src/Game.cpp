@@ -2,6 +2,7 @@
 
 #include "Color.h"
 #include "Config.h"
+#include "DebugFont.h"
 #include "FillRules.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
@@ -14,7 +15,10 @@ Game::Game(int width, int height) :
 	mWidth(width), mHeight(height),
 	mWalls(width * height),
 	mSpatialHash(width * height),
-	mNextEntityId(0)
+	mNextEntityId(0),
+	mWallsToWin((int)((float)width * height * 0.8f)),
+	mOver(false),
+	mOverMessage("No one won yet")
 {
 	mFillRule.reset(new EmptyRectanglesFillRule(*this));
 	mFillRule->onInit();
@@ -54,8 +58,9 @@ WallPtr Game::createWall(int x, int y, int playerId, bool projectile) {
 		wall = make_shared<Wall>(*this, x, y, popNextEntityId(), playerId, projectile);
 		setWallAt(x, y, wall);
 		mFillRule->onWallCreated(x, y);
+		mPlayers[playerId]->onWallComplete();
 		return wall;
-	} else if (wall->getPlayerId() == playerId) {
+	} else if (projectile || wall->getPlayerId() == playerId) {
 		// Let WallStreams create through a player's own walls & let the player fire existing walls
 		// TODO: This logic could probably be in Player
 		return wall;
@@ -77,6 +82,8 @@ void Game::removeWall(int x, int y) {
 	if (it != mDynamicWalls.end()) {
 		mDynamicWalls.erase(it);
 	}
+
+	mPlayers[wall->getPlayerId()]->onWallDestroyed();
 
 	mFreeEntityIds.push_back(wall->getEntityId());
 	setWallAt(x, y, nullptr);
@@ -149,11 +156,37 @@ void Game::update(float dt) {
 	}
 
 	// Update players
+	int aliveCount = 0;
 	for (auto& player : mPlayers) {
 		player->update(dt);
+		if (player->numWalls >= mWallsToWin) {
+			setPlayerWon(player->getPlayerId());
+		}
+		if (player->getStock() > 0) {
+			++aliveCount;
+		}
+	}
+
+	if (aliveCount == 0) {
+		mOver = true;
+		mOverMessage = "It's a draw";
+	} else if (aliveCount == 1) {
+		for (auto& player : mPlayers) {
+			if (player->getStock() > 0) {
+				setPlayerWon(player->getPlayerId());
+				break;
+			}
+		}
 	}
 
 	collideEntities();
+}
+
+void Game::setPlayerWon(int playerId) {
+	mOver = true;
+	mOverMessage = string("Player ");
+	mOverMessage.push_back('1' + (char)playerId);
+	mOverMessage.append(" Wins");
 }
 
 void Game::renderDebug() {
@@ -162,9 +195,10 @@ void Game::renderDebug() {
 		{0.f, 1.f, 0.f, 0.5f}
 	};
 
-	// Setup camera
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+	// Setup camera
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho(-1., mWidth + 1., -1., mHeight + 1., -1., 1.);
@@ -246,6 +280,17 @@ void Game::renderDebug() {
 	for (auto& player : mPlayers) {
 		glColor4fv((const GLfloat*)&playerColors[player->getPlayerId()]);
 		player->renderDebug();
+	}
+
+	// Render win message
+	if (mOver) {
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(-DebugFont::kGlyphWidth, (mOverMessage.length() + 1) * DebugFont::kGlyphWidth, -(float)mOverMessage.length() * DebugFont::kGlyphHeight / 2, (float)mOverMessage.length() * DebugFont::kGlyphHeight / 2, -1., 1.);
+		glMatrixMode(GL_MODELVIEW);
+
+		glColor4f(1.f, 1.f, 1.f, 1.f);
+		gDebugFont->renderString(mOverMessage.c_str());
 	}
 
 	glDisable(GL_BLEND);
@@ -411,14 +456,14 @@ void Game::collideEntities(EntityPtr a, EntityPtr b) {
 		float absPushApartX = fabsf(pushApartX);
 		float absPushApartY = fabsf(pushApartY);
 
-		if (a->dynamic && b->dynamic) {
-			pushApartX *= 0.5f;
-			pushApartY *= 0.5f;
+		if (a->active && a->dynamic && b->active && b->dynamic) {
+			pushApartX *= 0.75f;
+			pushApartY *= 0.75f;
 		}
 
 		// Push a half the distance away from b other along the axis with the least overlap
 		// Note: this assumes both are rectangles
-		if (a->dynamic) {
+		if (a->active && a->dynamic) {
 			if (absPushApartX < absPushApartY) {
 				a->position.x += pushApartX * 0.5f;
 			} else if (absPushApartX > absPushApartY) {
@@ -431,7 +476,7 @@ void Game::collideEntities(EntityPtr a, EntityPtr b) {
 
 		// Push b half the distance away from a other along the axis with the least overlap
 		// Note: this assumes both are rectangles
-		if (b->dynamic) {
+		if (b->active && b->dynamic) {
 			if (absPushApartX < absPushApartY) {
 				b->position.x -= pushApartX * 0.5f;
 			} else if (absPushApartX > absPushApartY) {

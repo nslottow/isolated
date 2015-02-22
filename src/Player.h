@@ -26,6 +26,9 @@ private:
 	float mMovementHoldTime;
 	Direction mFacing;
 	Timer mRespawnTimer;
+	Timer mPushTimer;
+	WallPtr mPushingWall;
+	int mPushTargetX, mPushTargetY;
 
 	// Wall building state
 	WallPtr mWall;
@@ -59,6 +62,8 @@ private:
 public:
 	void die(); // Destroy the WallStream and deactivate this Player
 
+	void onWallComplete();
+	void onWallDestroyed();
 	void onCollisionEnter(EntityPtr other, Vec2 pushApart) override;
 	void onCollisionPersist(EntityPtr other, Vec2 pushApart) override;
 

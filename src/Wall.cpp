@@ -3,6 +3,7 @@
 #include "FillRules.h"
 #include "Game.h"
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 // TODO: These will probably end up being members of Wall once powerups are added
 float Wall::sRiseTime = 0.7f;
@@ -64,7 +65,6 @@ void Wall::beginMoveTo(int x, int y) {
 		mMovementDir = Vec2((float)x - position.x, (float)y - position.y);
 		mMovementDir.normalize();
 		mState = WALL_MOVING;
-		dynamic = true;
 		assert(mGame.getWallAt((int)position.x, (int)position.y).get() == this);
 		mGame.onWallBeginMove((int)position.x, (int)position.y);
 	}
@@ -83,7 +83,6 @@ void Wall::onCollisionEnter(EntityPtr other, Vec2 overlap) {
 		if (otherDir.x * mMovementDir.x + otherDir.y * mMovementDir.y > 0.8f) {
 			position = Vec2(roundf(position.x), roundf(position.y));
 			mState = WALL_STATIC;
-			dynamic = false;
 			mGame.onWallFinishMove(getEntityId());
 		}
 	}
@@ -101,14 +100,14 @@ void Wall::update(float dt) {
 			die();
 		}
 	} else if (mState == WALL_MOVING) {
-		position += mMovementDir * sMovementSpeed * dt;
-
-		Vec2 moveTarget(mMoveTargetX, mMoveTargetY);
-		if ((moveTarget - position).length() < 0.05f) {
+		Vec2 moveTarget((float)mMoveTargetX, (float)mMoveTargetY);
+		float distance = (moveTarget - position).length();
+		if (distance < 0.05f) {
 			position = moveTarget;
 			mState = WALL_STATIC;
-			dynamic = false;
 			mGame.onWallFinishMove(getEntityId());
+		} else {
+			position += mMovementDir * sMovementSpeed * dt;
 		}
 	}
 
