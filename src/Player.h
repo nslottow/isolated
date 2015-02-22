@@ -25,6 +25,7 @@ private:
 	int mSelectionX, mSelectionY;
 	float mMovementHoldTime;
 	Direction mFacing;
+	Timer mRespawnTimer;
 
 	// Wall building state
 	WallPtr mWall;
@@ -33,6 +34,7 @@ private:
 	Timer mProjectileAdvanceTimer;
 
 public:
+	static float sRespawnTime;
 	static float sBuildAdvanceTime;
 	static float sProjectileAdvanceTime;
 	static float sAttackTapTime;
@@ -58,6 +60,7 @@ public:
 	void die(); // Destroy the WallStream and deactivate this Player
 
 	void onCollisionEnter(EntityPtr other, Vec2 pushApart) override;
+	void onCollisionPersist(EntityPtr other, Vec2 pushApart) override;
 
 	void update(float dt); // Handle input and move!
 

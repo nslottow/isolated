@@ -9,6 +9,7 @@
 
 using namespace std;
 
+float Player::sRespawnTime = 1.5f;
 float Player::sBuildAdvanceTime = 0.3f;
 float Player::sProjectileAdvanceTime = 0.05f;
 float Player::sAttackTapTime = 0.15f;
@@ -23,6 +24,7 @@ Player::Player(Game& game, int entityId, int playerId) :
 	mFacing(DIR_UP),
 	mMeleeStrength(1),
 	speed(5.f),
+	mRespawnTimer(game.getClock(), sRespawnTime),
 	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime),
 	mProjectileAdvanceTimer(game.getClock(), sProjectileAdvanceTime)
 {
@@ -94,6 +96,15 @@ void Player::advanceWallStream() {
 void Player::die() {
 	mState = PLAYER_NORMAL;
 	mWall.reset();
+	active = false;
+	mRespawnTimer.reset();
+
+	// TODO: Implement a proper respawn mechanism depending on the mode
+	int newX = rand() % mGame.getWidth();
+	int newY = rand() % mGame.getHeight();
+	position.x = (float)newX;
+	position.y = (float)newY;
+
 	--mStock;
 	cout << "Player " << mPlayerId << " died, " << mStock << " lives left" << endl;
 	if (mStock == 0) {
@@ -110,17 +121,32 @@ void Player::onCollisionEnter(EntityPtr other, Vec2 pushApart) {
 		float playerArea = size.x * size.y;
 		if (absPushApartX * absPushApartY > playerArea * 0.5f) {
 			die();
-			// TODO: Implement a proper respawn mechanism depending on the mode
-			int newX = rand() % mGame.getWidth();
-			int newY = rand() % mGame.getHeight();
-			mGame.removeWall(newX, newY);
-			position.x = (float)newX;
-			position.y = (float)newY;
+		}
+	}
+}
+
+void Player::onCollisionPersist(EntityPtr other, Vec2 pushApart) {
+	if (other->getType() == ENTITY_WALL) {
+		float absPushApartX = fabsf(pushApart.x);
+		float absPushApartY = fabsf(pushApart.y);
+
+		// Kill the player if it is more than half in the square
+		float playerArea = size.x * size.y;
+		if (absPushApartX * absPushApartY > playerArea * 0.5f) {
+			die();
 		}
 	}
 }
 
 void Player::update(float dt) {
+	if (!active) {
+		if (mRespawnTimer.isExpired()) {
+			active = true;
+			mGame.removeWall((int)position.x, (int)position.y);
+		}
+		return;
+	}
+
 	if (mState == PLAYER_NORMAL) {
 		// Handle movement
 		Vec2 movementDir;
@@ -252,11 +278,55 @@ void Player::update(float dt) {
 }
 
 void Player::releaseProjectileWall() {
-	mWall->beginMoveTo(mWallStreamX, mWallStreamY);
+	int targetX = mSelectionX;
+	int targetY = mSelectionY;
+
+	switch (mFacing) {
+	case DIR_UP:
+		targetY = mGame.getHeight() - 1;
+		break;
+	case DIR_DOWN:
+		targetY = 0;
+		break;
+	case DIR_LEFT:
+		targetX = 0;
+		break;
+	case DIR_RIGHT:
+		targetX = mGame.getWidth() - 1;
+		break;
+	}
+
+	mWall->beginMoveTo(targetX, targetY);
 	mWall.reset();
 }
 
+static void renderCircle(float x, float y, float r) {
+	glBegin(GL_LINE_STRIP);
+	const int steps = 32;
+	const float angleStep = 6.28318531f / steps;
+	for (int i = 0; i < steps; i++) {
+		glVertex2f(x + r * cos(i * angleStep), y + r * sin(i * angleStep));
+	}
+
+	glVertex2f(x + r, y);
+	glEnd();
+}
+
 void Player::renderDebug() const {
+	// Render player stock at the bottom of the screen
+	glPointSize(5.f);
+	glBegin(GL_POINTS);
+	float stockBarOffset = mPlayerId * 4.f;
+	for (int i = 0; i < mStock; ++i) {
+		glVertex2f(i * 0.4f + stockBarOffset, -0.5f);
+	}
+	glEnd();
+
+	if (!active) {
+		renderCircle(position.x + size.x / 2.f, position.y + size.y / 2.f, 0.5f / mRespawnTimer.getInterpolator());
+		return;
+	}
+
 	// Render the player body
 	float angle = 0.f;
 	switch (mFacing) {
@@ -283,15 +353,6 @@ void Player::renderDebug() const {
 	glEnd();
 	glPopMatrix();
 
-	// Render player stock at the bottom of the screen
-	glPointSize(5.f);
-	glBegin(GL_POINTS);
-	float stockBarOffset = mPlayerId * 4.f;
-	for (int i = 0; i < mStock; ++i) {
-		glVertex2f(i * 0.4f + stockBarOffset, -0.5f);
-	}
-	glEnd();
-
 	// Render the selection
 	if (mState == PLAYER_NORMAL) {
 		int selectionX, selectionY;
@@ -307,8 +368,7 @@ void Player::renderDebug() const {
 	}
 
 	// Render the currently building indicator
-	if (mState == PLAYER_BUILDING || mState == PLAYER_BUILDING_ADVANCING ||
-		mState == PLAYER_BUILDING_PROJECTILE || mState == PLAYER_CHARGING_PROJECTILE) {
+	if (mState == PLAYER_BUILDING || mState == PLAYER_BUILDING_ADVANCING) {
 		glColor4f(1.f, 1.f, 1.f, 0.1f);
 		glBegin(GL_LINE_STRIP);
 		glVertex2i(mWallStreamX, mWallStreamY);

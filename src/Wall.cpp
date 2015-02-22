@@ -104,7 +104,7 @@ void Wall::update(float dt) {
 		position += mMovementDir * sMovementSpeed * dt;
 
 		Vec2 moveTarget(mMoveTargetX, mMoveTargetY);
-		if ((moveTarget - position).length() < 0.01f) {
+		if ((moveTarget - position).length() < 0.05f) {
 			position = moveTarget;
 			mState = WALL_STATIC;
 			dynamic = false;

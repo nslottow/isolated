@@ -223,6 +223,9 @@ void Game::renderDebug() {
 		float strength = (float)wall->getStrength() / Wall::sMaxStrength;
 		topColor *= 0.7f * strength;
 		topColor.a = 1.f;
+		if (wall->dynamic) {
+			topColor.b = 1.f;
+		}
 		baseColor *= strength;
 		glColor4fv((GLfloat*)&baseColor);
 		glVertex2f(pos.x + 0.f, pos.y + 0.f);
@@ -333,7 +336,7 @@ void Game::collideEntities() {
 			for (size_t j = i + 1; j < cell.size(); ++j) {
 				auto a = cell[i];
 				auto b = cell[j];
-				if (a != b) {
+				if (a != b && a->active && b->active) {
 					collideEntities(a, b);
 				}
 			}
