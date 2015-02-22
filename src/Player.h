@@ -12,6 +12,8 @@ private:
 		PLAYER_NORMAL,
 		PLAYER_BUILDING,
 		PLAYER_BUILDING_ADVANCING,
+		PLAYER_BUILDING_PROJECTILE,
+		PLAYER_CHARGING_PROJECTILE,
 		PLAYER_PUSHING,
 		PLAYER_STUNNED
 	} mState;
@@ -28,9 +30,11 @@ private:
 	WallPtr mWall;
 	int mWallStreamX, mWallStreamY;
 	Timer mBuildAdvanceTimer;
+	Timer mProjectileAdvanceTimer;
 
 public:
 	static float sBuildAdvanceTime;
+	static float sProjectileAdvanceTime;
 	static float sAttackTapTime;
 	static float sPushStartTime;
 
@@ -46,9 +50,9 @@ public:
 	void getSelection(int& selectionX, int& selectionY) const;
 
 private:
-	void advanceBuilding();
-	void tryCreateWall();
-	void beginBuilding();
+	void advanceWallStream();
+	void tryCreateWall(State desiredState);
+	void releaseProjectileWall();
 
 public:
 	void die(); // Destroy the WallStream and deactivate this Player

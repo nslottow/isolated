@@ -7,10 +7,10 @@
 // TODO: These will probably end up being members of Wall once powerups are added
 float Wall::sRiseTime = 0.7f;
 float Wall::sFallTime = 0.7f;
-float Wall::sMovementSpeed = 2.f;
+float Wall::sMovementSpeed = 15.f;
 int Wall::sMaxStrength = 3;
 
-Wall::Wall(Game& game, int x, int y, int entityId, int playerId) :
+Wall::Wall(Game& game, int x, int y, int entityId, int playerId, bool projectile) :
 	Entity(entityId, ENTITY_WALL), // TODO: Give walls an entityId
 	mState(WALL_RISING),
 	mGame(game),
@@ -19,6 +19,7 @@ Wall::Wall(Game& game, int x, int y, int entityId, int playerId) :
 	mBuildTimer(game.getClock(), sRiseTime)
 {
 	dynamic = false;
+	mIsProjectile = projectile;
 	position = Vec2((float)x, (float)y);
 	size = Vec2(1.f, 1.f);
 }
@@ -57,12 +58,15 @@ void Wall::takeDamage(int damage) {
 }
 
 void Wall::beginMoveTo(int x, int y) {
-	if (x > 0 && x < mGame.getWidth() && y > 0 && y < mGame.getHeight()) {
+	if (active && x >= 0 && x < mGame.getWidth() && y >= 0 && y < mGame.getHeight()) {
 		mMoveTargetX = x;
 		mMoveTargetY = y;
 		mMovementDir = Vec2((float)x - position.x, (float)y - position.y);
 		mMovementDir.normalize();
 		mState = WALL_MOVING;
+		dynamic = true;
+		assert(mGame.getWallAt((int)position.x, (int)position.y).get() == this);
+		mGame.onWallBeginMove((int)position.x, (int)position.y);
 	}
 }
 
@@ -72,10 +76,24 @@ void Wall::die() {
 	// TODO: notify our WallStream that it should stop
 }
 
+void Wall::onCollisionEnter(EntityPtr other, Vec2 overlap) {
+	if (other->getType() == ENTITY_WALL && mState == WALL_MOVING) {
+		auto otherDir = other->position - position;
+		otherDir.normalize();
+		if (otherDir.x * mMovementDir.x + otherDir.y * mMovementDir.y > 0.8f) {
+			position = Vec2(roundf(position.x), roundf(position.y));
+			mState = WALL_STATIC;
+			dynamic = false;
+			mGame.onWallFinishMove(getEntityId());
+		}
+	}
+}
+
 void Wall::update(float dt) {
 	if (mState == WALL_RISING) {
 		if (mBuildTimer.isExpired()) {
 			mState = WALL_STATIC;
+			assert(mGame.getWallAt((int)position.x, (int)position.y).get() == this);
 			mGame.onWallCompleted((int)position.x, (int)position.y);
 		}
 	} else if (mState == WALL_FALLING) {
@@ -83,12 +101,15 @@ void Wall::update(float dt) {
 			die();
 		}
 	} else if (mState == WALL_MOVING) {
-		// Unset the wall for all the cells this wall used to overlap
-
 		position += mMovementDir * sMovementSpeed * dt;
 
-		// Set the wall for all the cells this wall overlaps
-
+		Vec2 moveTarget(mMoveTargetX, mMoveTargetY);
+		if ((moveTarget - position).length() < 0.01f) {
+			position = moveTarget;
+			mState = WALL_STATIC;
+			dynamic = false;
+			mGame.onWallFinishMove(getEntityId());
+		}
 	}
 
 	// TODO: This Wall should be taken off the update list when it transitions to state WALL_STATIC

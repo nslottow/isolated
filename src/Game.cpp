@@ -44,19 +44,19 @@ void Game::createPlayer(int x, int y) {
 	player->position.y = (float)y;
 }
 
-WallPtr Game::createWall(int x, int y, int playerId) {
+WallPtr Game::createWall(int x, int y, int playerId, bool projectile) {
 	if (!isInBounds(x, y)) {
 		return nullptr;
 	}
 
 	auto wall = getWallAt(x, y);
 	if (!wall) {
-		wall = make_shared<Wall>(*this, x, y, popNextEntityId(), playerId);
+		wall = make_shared<Wall>(*this, x, y, popNextEntityId(), playerId, projectile);
 		setWallAt(x, y, wall);
 		mFillRule->onWallCreated(x, y);
 		return wall;
 	} else if (wall->getPlayerId() == playerId) {
-		// Let WallStreams create through a player's own walls
+		// Let WallStreams create through a player's own walls & let the player fire existing walls
 		// TODO: This logic could probably be in Player
 		return wall;
 	}
@@ -68,6 +68,14 @@ void Game::removeWall(int x, int y) {
 	auto wall = getWallAt(x, y);
 	if (!wall) {
 		return;
+	}
+
+	// HACK: Walls that were projectiles don't get removed from mDynamicWalls unless removed this way
+	// because the event that indicates a wall has become static happens during iteration through
+	// mDynamicWalls
+	auto it = mDynamicWalls.find(wall->getEntityId());
+	if (it != mDynamicWalls.end()) {
+		mDynamicWalls.erase(it);
 	}
 
 	mFreeEntityIds.push_back(wall->getEntityId());
@@ -95,6 +103,25 @@ bool Game::attackWall(int x, int y, char damage) {
 	return true;
 }
 
+void Game::onWallBeginMove(int x, int y) {
+	auto wall = getWallAt(x, y);
+	assert(wall && "Expected non-null wall to start moving");
+	setWallAt(x, y, nullptr);
+	mDynamicWalls[wall->getEntityId()] = wall;
+	mFillRule->onWallDestroyed(x, y);
+}
+
+void Game::onWallFinishMove(int entityId) {
+	auto it = mDynamicWalls.find(entityId);
+	auto wall = it->second;
+	//mDynamicWalls.erase(it);
+	int x = (int)wall->position.x;
+	int y = (int)wall->position.y;
+	setWallAt(x, y, wall);
+	mFillRule->onWallCreated(x, y);
+	onWallCompleted(x, y);
+}
+
 void Game::onWallCompleted(int x, int y) {
 	mFillRule->onWallCompleted(x, y);
 }
@@ -117,8 +144,8 @@ void Game::update(float dt) {
 	}
 
 	// Update dynamic walls
-	for (auto wall : mDynamicWalls) {
-		wall->update(dt);
+	for (auto item : mDynamicWalls) {
+		item.second->update(dt);
 	}
 
 	// Update players
@@ -163,7 +190,7 @@ void Game::renderDebug() {
 	for (int i = 0; i < mWidth; ++i) {
 		for (int j = 0; j < mHeight; ++j) {
 			auto wall = getWallAt(i, j);
-			if (wall) {
+			if (wall && !wall->dynamic) {
 				auto& pos = wall->position;
 				float height = wall->getHeight() * 0.5f;
 				Color baseColor = playerColors[wall->getPlayerId()];
@@ -186,6 +213,30 @@ void Game::renderDebug() {
 			}
 		}
 	}
+
+	for (auto item : mDynamicWalls) {
+		auto wall = item.second;
+		auto& pos = wall->position;
+		float height = wall->getHeight() * 0.5f;
+		Color baseColor = playerColors[wall->getPlayerId()];
+		Color topColor = baseColor;
+		float strength = (float)wall->getStrength() / Wall::sMaxStrength;
+		topColor *= 0.7f * strength;
+		topColor.a = 1.f;
+		baseColor *= strength;
+		glColor4fv((GLfloat*)&baseColor);
+		glVertex2f(pos.x + 0.f, pos.y + 0.f);
+		glVertex2f(pos.x + 1.f, pos.y + 0.f);
+		glVertex2f(pos.x + 1.f, pos.y + 1.f);
+		glVertex2f(pos.x + 0.f, pos.y + 1.f);
+
+		glColor4fv((GLfloat*)&topColor);
+		glVertex2f(pos.x + 0.f, pos.y + height);
+		glVertex2f(pos.x + 1.f, pos.y + height);
+		glVertex2f(pos.x + 1.f, pos.y + 1.0f);
+		glVertex2f(pos.x + 0.f, pos.y + 1.0f);
+	}
+
 	glEnd();
 
 	// Render players
@@ -246,8 +297,8 @@ void Game::updateSpatialHash() {
 		addEntityToSpatialHash(player);
 	}
 
-	for (auto wall : mDynamicWalls) {
-		addEntityToSpatialHash(wall);
+	for (auto item : mDynamicWalls) {
+		addEntityToSpatialHash(item.second);
 	}
 }
 
@@ -294,8 +345,8 @@ void Game::collideEntities() {
 		collideEntityWithWorld(player);
 	}
 
-	for (auto wall : mDynamicWalls) {
-		collideEntityWithWorld(wall);
+	for (auto item : mDynamicWalls) {
+		collideEntityWithWorld(item.second);
 	}
 
 	// TODO: For any collisions that have not been persisted, they have been exited

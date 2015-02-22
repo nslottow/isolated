@@ -10,6 +10,7 @@
 using namespace std;
 
 float Player::sBuildAdvanceTime = 0.3f;
+float Player::sProjectileAdvanceTime = 0.05f;
 float Player::sAttackTapTime = 0.15f;
 float Player::sPushStartTime = 0.4f;
 
@@ -22,7 +23,8 @@ Player::Player(Game& game, int entityId, int playerId) :
 	mFacing(DIR_UP),
 	mMeleeStrength(1),
 	speed(5.f),
-	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime)
+	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime),
+	mProjectileAdvanceTimer(game.getClock(), sProjectileAdvanceTime)
 {
 	mStock = gConfig["defaults"].getInt("stock", 10);
 	size = Vec2(1.f, 1.f);
@@ -47,10 +49,10 @@ void Player::getSelection(int& selectionX, int& selectionY) const {
 	}
 }
 
-void Player::tryCreateWall() {
-	mWall = mGame.createWall(mWallStreamX, mWallStreamY, mPlayerId);
+void Player::tryCreateWall(State desiredState) {
+	mWall = mGame.createWall(mWallStreamX, mWallStreamY, mPlayerId, desiredState == PLAYER_BUILDING_PROJECTILE);
 	if (mWall) {
-		mState = PLAYER_BUILDING;
+		mState = desiredState;
 		mWall->beginRising();
 	} else {
 		// We were unable to build, so we can't continue building
@@ -59,15 +61,7 @@ void Player::tryCreateWall() {
 	}
 }
 
-void Player::beginBuilding() {
-	assert(mState == PLAYER_NORMAL);
-	getSelection(mWallStreamX, mWallStreamY);
-	tryCreateWall();
-}
-
-void Player::advanceBuilding() {
-	assert(mState == PLAYER_BUILDING_ADVANCING);
-
+void Player::advanceWallStream() {
 	// Continue building in the direciton the player is facing
 	switch (mFacing) {
 	case DIR_UP:
@@ -84,7 +78,17 @@ void Player::advanceBuilding() {
 		break;
 	}
 
-	tryCreateWall();
+	if (mWallStreamX < 0) {
+		mWallStreamX = 0;
+	} else if (mWallStreamX >= mGame.getWidth()) {
+		mWallStreamX = mGame.getWidth() - 1;
+	}
+
+	if (mWallStreamY < 0) {
+		mWallStreamY = 0;
+	} else if (mWallStreamY >= mGame.getHeight()) {
+		mWallStreamY = mGame.getHeight() - 1;
+	}
 }
 
 void Player::die() {
@@ -164,7 +168,13 @@ void Player::update(float dt) {
 
 		// Handle creating walls
 		if (gInput.justActivated(mPlayerId, INPUT_WALL)) {
-			beginBuilding();
+			// Try to begin building outward from the player's selection
+			getSelection(mWallStreamX, mWallStreamY);
+			tryCreateWall(PLAYER_BUILDING);
+		} else if (gInput.justActivated(mPlayerId, INPUT_MELEE)) {
+			// Try to begin building a projectile at the selection
+			getSelection(mWallStreamX, mWallStreamY);
+			tryCreateWall(PLAYER_BUILDING_PROJECTILE);
 		}
 
 		// Handle attacking walls
@@ -189,6 +199,7 @@ void Player::update(float dt) {
 		}
 	}
 	
+	// Handle updating the building state
 	if (mState == PLAYER_BUILDING || mState == PLAYER_BUILDING_ADVANCING) {
 		if (gInput.justDeactivated(mPlayerId, INPUT_WALL)) {
 			mState = PLAYER_NORMAL;
@@ -206,9 +217,43 @@ void Player::update(float dt) {
 
 	if (mState == PLAYER_BUILDING_ADVANCING) {
 		if (mBuildAdvanceTimer.isExpired()) {
-			advanceBuilding();
+			advanceWallStream();
+			tryCreateWall(PLAYER_BUILDING);
 		}
 	}
+
+	// Handle updating the projectile state
+	if (mState == PLAYER_BUILDING_PROJECTILE) {
+		if (mWall->isComplete()) {
+			mProjectileAdvanceTimer.reset();
+			mState = PLAYER_CHARGING_PROJECTILE;
+		}
+
+		if (gInput.justDeactivated(mPlayerId, INPUT_MELEE)) {
+			mState = PLAYER_NORMAL;
+			mWall->beginFalling();
+			mWall.reset();
+		} 
+	}
+
+	if (mState == PLAYER_CHARGING_PROJECTILE) {
+		if (mProjectileAdvanceTimer.isExpired()) {
+			mProjectileAdvanceTimer.reset();
+			advanceWallStream();
+		}
+
+		if (gInput.justDeactivated(mPlayerId, INPUT_MELEE)) {
+			mState = PLAYER_NORMAL;
+			// Release the projectile
+			// TODO: pull this out into a function so it happens if we die while charging too
+			releaseProjectileWall();
+		}
+	}
+}
+
+void Player::releaseProjectileWall() {
+	mWall->beginMoveTo(mWallStreamX, mWallStreamY);
+	mWall.reset();
 }
 
 void Player::renderDebug() const {
@@ -238,7 +283,7 @@ void Player::renderDebug() const {
 	glEnd();
 	glPopMatrix();
 
-	// Render player stock at the top of the screen
+	// Render player stock at the bottom of the screen
 	glPointSize(5.f);
 	glBegin(GL_POINTS);
 	float stockBarOffset = mPlayerId * 4.f;
@@ -262,7 +307,8 @@ void Player::renderDebug() const {
 	}
 
 	// Render the currently building indicator
-	if (mState == PLAYER_BUILDING || mState == PLAYER_BUILDING_ADVANCING) {
+	if (mState == PLAYER_BUILDING || mState == PLAYER_BUILDING_ADVANCING ||
+		mState == PLAYER_BUILDING_PROJECTILE || mState == PLAYER_CHARGING_PROJECTILE) {
 		glColor4f(1.f, 1.f, 1.f, 0.1f);
 		glBegin(GL_LINE_STRIP);
 		glVertex2i(mWallStreamX, mWallStreamY);

@@ -7,6 +7,7 @@
 #include <cassert>
 #include <istream>
 #include <memory>
+#include <map>
 #include <set>
 #include <vector>
 
@@ -67,9 +68,19 @@ struct CollisionComparer {
 			return c1.b.get() < c2.b.get();
 		} else if (c1.a == c2.b) {
 			return c1.b.get() < c2.a.get();
+		} else if (c1.b == c2.a) {
+			return c1.a.get() < c2.b.get();
+		} else if (c1.b == c2.b) {
+			return c1.a.get() < c2.a.get();
 		} else {
 			return c1.a.get() < c2.a.get();
 		}
+	}
+};
+
+struct EntityComparer {
+	bool operator()(EntityPtr a, EntityPtr b) {
+		return !a || (b && a->getEntityId() < b->getEntityId());
 	}
 };
 
@@ -77,7 +88,7 @@ class Game {
 private:
 	int mWidth, mHeight;
 	std::vector<WallPtr> mWalls;
-	std::vector<WallPtr> mDynamicWalls;
+	std::map<int, WallPtr> mDynamicWalls;
 
 	std::vector<std::vector<EntityPtr>> mSpatialHash;
 	std::set<Collision, CollisionComparer> mCollisions;
@@ -131,9 +142,11 @@ public:
 		return mWalls[x + y * mWidth];
 	}
 
-	WallPtr createWall(int x, int y, int playerId);
+	WallPtr createWall(int x, int y, int playerId, bool projectile = false);
 	void removeWall(int x, int y);
 	bool attackWall(int x, int y, char damage); // Returns true if attack hit a Wall
+	void onWallBeginMove(int x, int y);
+	void onWallFinishMove(int entityId);
 	void onWallCompleted(int x, int y);
 
 	const Clock& getClock() const { return mClock; }
