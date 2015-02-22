@@ -53,6 +53,8 @@ private:
 public:
 	void die(); // Destroy the WallStream and deactivate this Player
 
+	void onCollisionEnter(EntityPtr other, Vec2 pushApart) override;
+
 	void update(float dt); // Handle input and move!
 
 	void renderDebug() const;

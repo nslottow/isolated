@@ -7,6 +7,7 @@
 // TODO: These will probably end up being members of Wall once powerups are added
 float Wall::sRiseTime = 0.7f;
 float Wall::sFallTime = 0.7f;
+float Wall::sMovementSpeed = 2.f;
 int Wall::sMaxStrength = 3;
 
 Wall::Wall(Game& game, int x, int y, int entityId, int playerId) :
@@ -17,6 +18,7 @@ Wall::Wall(Game& game, int x, int y, int entityId, int playerId) :
 	mStrength(sMaxStrength),
 	mBuildTimer(game.getClock(), sRiseTime)
 {
+	dynamic = false;
 	position = Vec2((float)x, (float)y);
 	size = Vec2(1.f, 1.f);
 }
@@ -54,6 +56,16 @@ void Wall::takeDamage(int damage) {
 	}
 }
 
+void Wall::beginMoveTo(int x, int y) {
+	if (x > 0 && x < mGame.getWidth() && y > 0 && y < mGame.getHeight()) {
+		mMoveTargetX = x;
+		mMoveTargetY = y;
+		mMovementDir = Vec2((float)x - position.x, (float)y - position.y);
+		mMovementDir.normalize();
+		mState = WALL_MOVING;
+	}
+}
+
 void Wall::die() {
 	active = false;
 	mStrength = 0;
@@ -70,6 +82,13 @@ void Wall::update(float dt) {
 		if (mBuildTimer.isExpired()) {
 			die();
 		}
+	} else if (mState == WALL_MOVING) {
+		// Unset the wall for all the cells this wall used to overlap
+
+		position += mMovementDir * sMovementSpeed * dt;
+
+		// Set the wall for all the cells this wall overlaps
+
 	}
 
 	// TODO: This Wall should be taken off the update list when it transitions to state WALL_STATIC

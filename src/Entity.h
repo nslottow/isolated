@@ -24,6 +24,7 @@ private:
 public:
 	bool active;
 	bool collidable;
+	bool dynamic;
 	bool trigger;
 	Vec2 position;
 	Vec2 size;
@@ -34,10 +35,14 @@ private:
 
 public:
 	Entity(int id, EntityType type) :
-		mEntityId(id), mEntityType(type), active(true) {}
+		mEntityId(id), mEntityType(type), active(true), collidable(true), dynamic(true), trigger(false) {}
 
 	int getEntityId() const { return mEntityId; }
 	EntityType getType() const { return mEntityType; }
+
+	virtual void onCollisionEnter(std::shared_ptr<Entity> other, Vec2 pushApart) {}
+	virtual void onCollisionPersist(std::shared_ptr<Entity> other, Vec2 pushApart) {}
+	virtual void onCollisionExit(std::shared_ptr<Entity> other) {}
 };
 
 typedef std::shared_ptr<Entity> EntityPtr;

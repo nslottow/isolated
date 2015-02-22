@@ -10,7 +10,7 @@
 using namespace std;
 
 float Player::sBuildAdvanceTime = 0.3f;
-float Player::sAttackTapTime = 0.2f;
+float Player::sAttackTapTime = 0.15f;
 float Player::sPushStartTime = 0.4f;
 
 Player::Player(Game& game, int entityId, int playerId) :
@@ -19,6 +19,7 @@ Player::Player(Game& game, int entityId, int playerId) :
 	mState(PLAYER_NORMAL),
 	mPlayerId(playerId),
 	mMovementHoldTime(0.f),
+	mFacing(DIR_UP),
 	mMeleeStrength(1),
 	speed(5.f),
 	mBuildAdvanceTimer(game.getClock(), sBuildAdvanceTime)
@@ -93,6 +94,25 @@ void Player::die() {
 	cout << "Player " << mPlayerId << " died, " << mStock << " lives left" << endl;
 	if (mStock == 0) {
 		cout << "Player " << mPlayerId << " lost" << endl;
+	}
+}
+
+void Player::onCollisionEnter(EntityPtr other, Vec2 pushApart) {
+	if (other->getType() == ENTITY_WALL) {
+		float absPushApartX = fabsf(pushApart.x);
+		float absPushApartY = fabsf(pushApart.y);
+
+		// Kill the player if it is more than half in the square
+		float playerArea = size.x * size.y;
+		if (absPushApartX * absPushApartY > playerArea * 0.5f) {
+			die();
+			// TODO: Implement a proper respawn mechanism depending on the mode
+			int newX = rand() % mGame.getWidth();
+			int newY = rand() % mGame.getHeight();
+			mGame.removeWall(newX, newY);
+			position.x = (float)newX;
+			position.y = (float)newY;
+		}
 	}
 }
 

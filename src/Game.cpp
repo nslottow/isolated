@@ -13,6 +13,7 @@ Game::Game(int width, int height) :
 	mMaxPlayers(4), mNumPlayers(2),
 	mWidth(width), mHeight(height),
 	mWalls(width * height),
+	mSpatialHash(width * height),
 	mNextEntityId(0)
 {
 	mFillRule.reset(new EmptyRectanglesFillRule(*this));
@@ -115,12 +116,17 @@ void Game::update(float dt) {
 		}
 	}
 
+	// Update dynamic walls
+	for (auto wall : mDynamicWalls) {
+		wall->update(dt);
+	}
+
 	// Update players
 	for (auto& player : mPlayers) {
 		player->update(dt);
 	}
 
-	collidePlayersWithWorld();
+	collideEntities();
 }
 
 void Game::renderDebug() {
@@ -230,6 +236,101 @@ static bool intersect(float a1, float a2, float b1, float b2, float& pushApart) 
 	return false;
 }
 
+void Game::updateSpatialHash() {
+	// mSpatialHash[x + y * mWidth]
+	for (auto& cell : mSpatialHash) {
+		cell.clear();
+	}
+
+	for (auto player : mPlayers) {
+		addEntityToSpatialHash(player);
+	}
+
+	for (auto wall : mDynamicWalls) {
+		addEntityToSpatialHash(wall);
+	}
+}
+
+void Game::addEntityToSpatialHash(EntityPtr entity) {
+	// Add the entity to all the cells that it overlaps
+	int startX = (int)entity->position.x;
+	int startY = (int)entity->position.y;
+	int endX = (int)(entity->position.x + entity->size.x * 0.999f);
+	int endY = (int)(entity->position.y + entity->size.y * 0.999f);
+
+	for (int i = startX; i <= endX; ++i) {
+		if (i >= mWidth) {
+			break;
+		}
+
+		for (int j = startY; j <= endY; ++j) {
+			if (j >= mHeight) {
+				continue;
+			}
+
+			mSpatialHash[i + j * mWidth].push_back(entity);
+		}
+	}
+}
+
+void Game::collideEntities() {
+	// Collide dynamic entities against each other using the spatial hash
+	updateSpatialHash();
+
+	for (auto& cell : mSpatialHash) {
+		for (size_t i = 0; i < cell.size(); ++i) {
+			for (size_t j = i + 1; j < cell.size(); ++j) {
+				auto a = cell[i];
+				auto b = cell[j];
+				if (a != b) {
+					collideEntities(a, b);
+				}
+			}
+		}
+	}
+
+	// Collide dynamic entities with the world
+	for (auto player : mPlayers) {
+		collideEntityWithWorld(player);
+	}
+
+	for (auto wall : mDynamicWalls) {
+		collideEntityWithWorld(wall);
+	}
+
+	// TODO: For any collisions that have not been persisted, they have been exited
+
+	mPreviousCollisions = mCollisions;
+	mCollisions.clear();
+
+}
+
+void Game::collideEntityWithWorld(EntityPtr entity) {
+	boundEntity(entity);
+
+	int startX = (int)entity->position.x;
+	int startY = (int)entity->position.y;
+	int endX = (int)(entity->position.x + entity->size.x * 0.999f);
+	int endY = (int)(entity->position.y + entity->size.y * 0.999f);
+
+	for (int i = startX; i <= endX; ++i) {
+		if (i >= mWidth) {
+			break;
+		}
+
+		for (int j = startY; j <= endY; ++j) {
+			if (j >= mHeight) {
+				continue;
+			}
+
+			auto wall = getWallAt(i, j);
+			if (wall) {
+				collideEntities(entity, wall);
+			}
+		}
+	}
+}
+
 void Game::collideEntities(EntityPtr a, EntityPtr b) {
 	float ax1 = a->position.x;
 	float ax2 = ax1 + a->size.x;
@@ -251,95 +352,54 @@ void Game::collideEntities(EntityPtr a, EntityPtr b) {
 
 	// The entities are colliding if they intersect on both the x and y axes
 	if (overlapsX && overlapsY) {
-		// TODO: Check if this collision already existed
-	}
+		Vec2 overlap(pushApartX, pushApartY);
 
-	// TODO: For any collisions that have not been persisted, they have been exited
-}
-
-// TODO: Make this collide any entities and fire onCollision* for both entities
-void Game::collidePlayerWithWall(PlayerPtr player, WallPtr wall) {
-	float px1 = player->position.x;
-	float px2 = px1 + player->size.x;
-	float py1 = player->position.y;
-	float py2 = py1 + player->size.y;
-
-	float wx1 = wall->position.x;
-	float wx2 = wx1 + wall->size.x;
-	float wy1 = wall->position.y;
-	float wy2 = wy1 + wall->size.y;
-
-	// Separating axis theorem on x-axis
-	float pushApartX;
-	bool overlapsX = intersect(px1, px2, wx1, wx2, pushApartX);
-	
-	// Separating axis theorem on y-axis
-	float pushApartY;
-	bool overlapsY = intersect(py1, py2, wy1, wy2, pushApartY);
-
-	// The player collides with the wall if they intersect on both the x and y axes
-	if (overlapsX && overlapsY) {
 		float absPushApartX = fabsf(pushApartX);
 		float absPushApartY = fabsf(pushApartY);
 
-		// Kill the player if it is more than half in the square
-		float playerArea = player->size.x * player->size.y;
-		if (absPushApartX * absPushApartY > playerArea * 0.5f) {
-			player->die();
-			// TODO: Implement a proper respawn mechanism depending on the mode
-			int newX = rand() % mWidth;
-			int newY = rand() % mHeight;
-			removeWall(newX, newY);
-			player->position.x = (float)newX;
-			player->position.y = (float)newY;
-			return;
+		if (a->dynamic && b->dynamic) {
+			pushApartX *= 0.5f;
+			pushApartY *= 0.5f;
 		}
 
-		// Only move the player half the distance out of the wall
-		pushApartX *= 0.5f;
-		pushApartY *= 0.5f;
+		// Push a half the distance away from b other along the axis with the least overlap
+		// Note: this assumes both are rectangles
+		if (a->dynamic) {
+			if (absPushApartX < absPushApartY) {
+				a->position.x += pushApartX * 0.5f;
+			} else if (absPushApartX > absPushApartY) {
+				a->position.y += pushApartY * 0.5f;
+			} else {
+				a->position.x += pushApartX * 0.5f;
+				a->position.y += pushApartY * 0.5f;
+			}
+		}
 
-		// Push the player away from the wall along the axis with the least overlap
-		if (absPushApartX < absPushApartY) {
-			player->position.x += pushApartX;
-		} else if (absPushApartX > absPushApartY) {
-			player->position.y += pushApartY;
+		// Push b half the distance away from a other along the axis with the least overlap
+		// Note: this assumes both are rectangles
+		if (b->dynamic) {
+			if (absPushApartX < absPushApartY) {
+				b->position.x -= pushApartX * 0.5f;
+			} else if (absPushApartX > absPushApartY) {
+				b->position.y -= pushApartY * 0.5f;
+			} else {
+				b->position.x -= pushApartX * 0.5f;
+				b->position.y -= pushApartY * 0.5f;
+			}
+		}
+
+		// Check if this collision already existed
+		auto collision = Collision(a, b);
+
+		auto it = mPreviousCollisions.find(collision);
+		if (it == mPreviousCollisions.end()) {
+			a->onCollisionEnter(b, overlap);
+			b->onCollisionEnter(a, -overlap);
 		} else {
-			player->position.x += pushApartX;
-			player->position.y += pushApartY;
-		}
-	}
-}
-
-void Game::collidePlayersWithWorld() {
-	for (auto& player : mPlayers) {
-		if (!player->active) {
-			continue;
+			a->onCollisionPersist(b, overlap);
+			b->onCollisionPersist(a, -overlap);
 		}
 
-		boundEntity(static_pointer_cast<Entity>(player));
-
-		// Check all the cells that the player could possibly be in
-		int startX = (int)player->position.x;
-		int startY = (int)player->position.y;
-		int endX = (int)(player->position.x + player->size.x);
-		int endY = (int)(player->position.y + player->size.y);
-
-		for (int i = startX; i <= endX; ++i) {
-			if (i >= mWidth) {
-				break;
-			}
-
-			for (int j = startY; j <= endY; ++j) {
-				if (j >= mHeight) {
-					continue;
-				}
-
-				auto wall = getWallAt(i, j);
-				if (wall && wall->active) {
-					collidePlayerWithWall(player, wall);
-				}
-			}
-		}
+		mCollisions.insert(collision);
 	}
 }

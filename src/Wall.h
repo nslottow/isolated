@@ -28,11 +28,14 @@ private:
 	// TODO: Walls should be associated with a team in addition to a specific player, add mTeamId
 	int mPlayerId;
 	int mStrength;
+	int mMoveTargetX, mMoveTargetY;
+	Vec2 mMovementDir;
 	Timer mBuildTimer;
 
 public:
 	static float sRiseTime;
 	static float sFallTime;
+	static float sMovementSpeed;
 	static int sMaxStrength;
 
 	Wall(Game& game, int x, int y, int entityId, int playerId);
@@ -45,6 +48,7 @@ public:
 	void beginRising();
 	void beginFalling();
 	void takeDamage(int damage);
+	void beginMoveTo(int x, int y);
 	void die();
 
 	void update(float dt);

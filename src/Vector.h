@@ -22,6 +22,10 @@ struct Vec2 {
 		return Vec2(x - v.x, y - v.y);
 	}
 
+	Vec2 operator-() const {
+		return Vec2(-x, -y);
+	}
+
 	Vec2 operator*(const float s) const {
 		return Vec2(x * s, y * s);
 	}
@@ -61,7 +65,15 @@ struct Vec2 {
 	}
 
 	float distance(const Vec2& a, const Vec2& b) {
-		return std::sqrt(sqrDistance(a, b));
+		return (b - a).length();
+	}
+
+	float length() const {
+		return sqrt(x * x + y * y);
+	}
+
+	void normalize() {
+		*this /= length();
 	}
 };
 

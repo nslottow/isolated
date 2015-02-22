@@ -54,10 +54,34 @@ public:
 
 class IFillRule;
 
+struct Collision {
+	EntityPtr a;
+	EntityPtr b;
+
+	Collision(EntityPtr a, EntityPtr b) : a(a), b(b) {}
+};
+
+struct CollisionComparer {
+	bool operator()(Collision c1, Collision c2) {
+		if (c1.a == c2.a) {
+			return c1.b.get() < c2.b.get();
+		} else if (c1.a == c2.b) {
+			return c1.b.get() < c2.a.get();
+		} else {
+			return c1.a.get() < c2.a.get();
+		}
+	}
+};
+
 class Game {
 private:
 	int mWidth, mHeight;
 	std::vector<WallPtr> mWalls;
+	std::vector<WallPtr> mDynamicWalls;
+
+	std::vector<std::vector<EntityPtr>> mSpatialHash;
+	std::set<Collision, CollisionComparer> mCollisions;
+	std::set<Collision, CollisionComparer> mPreviousCollisions;
 
 	int mMaxPlayers;
 	int mNumPlayers;
@@ -82,12 +106,12 @@ private:
 		mWalls[x + y * mWidth] = wall;
 	}
 
-	void removeWall(int x, int y);
-
 	void boundEntity(EntityPtr entity);
+	void updateSpatialHash();
+	void addEntityToSpatialHash(EntityPtr entity);
+	void collideEntityWithWorld(EntityPtr entity);
+	void collideEntities();
 	void collideEntities(EntityPtr a, EntityPtr b);
-	void collidePlayerWithWall(PlayerPtr player, WallPtr wall);
-	void collidePlayersWithWorld();
 
 public:
 	int getWidth() const { return mWidth; }
@@ -108,6 +132,7 @@ public:
 	}
 
 	WallPtr createWall(int x, int y, int playerId);
+	void removeWall(int x, int y);
 	bool attackWall(int x, int y, char damage); // Returns true if attack hit a Wall
 	void onWallCompleted(int x, int y);
 

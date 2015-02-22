@@ -26,7 +26,7 @@ DebugMenuItemInt::DebugMenuItemInt(const char* category, const char* key, int mi
 }
 
 void DebugMenuItemInt::update(float dt) {
-	static stringstream converter;
+	stringstream converter;
 
 	int oldValue = mValue;
 
@@ -61,7 +61,7 @@ void DebugMenuItemInt::update(float dt) {
 	}
 	
 	if (mValue != oldValue) {
-		converter.str("");
+		// converter.str("");
 		converter << mValue;
 		gConfig[mCategory].setProperty(mKey, converter.str().c_str());
 	}
@@ -94,7 +94,7 @@ void DebugMenuItemString::update(float dt) {
 	int oldSelectionIndex = mSelectionIndex;
 
 	if (gInput.justActivated(INPUT_LEFT)) {
-		mSelectionIndex = (mSelectionIndex - 1) % mOptions.size();
+		mSelectionIndex = mSelectionIndex > 0 ? mSelectionIndex - 1 : mOptions.size() - 1;
 	}
 
 	if (gInput.justActivated(INPUT_RIGHT)) {
@@ -159,6 +159,7 @@ SceneGameSetup::SceneGameSetup(int screenWidth, int screenHeight) :
 	mMenu.addItem(new DebugMenuItemString("defaults", "mode", { "territory", "stock", "smash" }, false));
 	mMenu.addItem(new DebugMenuItemString("defaults", "fill-rule", { "empty-rectangles", "empty-regions", "3-surround" }, false));
 	mMenu.addItem(new DebugMenuItemString("defaults", "fill-method", { "instantaneous", "rings", "spiral", "sweep" }, false));
+	mMenu.addItem(new DebugMenuItemString("defaults", "projectile-walls", {"forced", "enabled", "disabled"}));
 	mMenu.addItem(new DebugMenuItemInt("defaults", "grid-size", 2, 100));
 	mMenu.addItem(new DebugMenuItemInt("defaults", "time-limit", 0, 600, false));
 	mMenu.addItem(new DebugMenuItemInt("defaults", "wall-strength", 1, 10));
