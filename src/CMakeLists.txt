@@ -17,7 +17,7 @@ add_executable(isolated
 
 target_link_libraries(isolated glfw ${GLFW_LIBRARIES} soil ${Boost_ASIO_LIBRARY})
 
-if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANG)
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") 
 	add_definitions(-Wall -std=c++11)
 else (MSVC)
 	add_definitions(/W3)

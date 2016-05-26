@@ -5,15 +5,15 @@
 
 class IFillRule {
 public:
-	virtual void onInit() = 0 {}
+	virtual void onInit() = 0;
 
-	virtual void onWallCreated(int x, int y) = 0 {}
+	virtual void onWallCreated(int x, int y) = 0;
 
-	virtual void onWallCompleted(int x, int y) = 0 {}
+	virtual void onWallCompleted(int x, int y) = 0;
 
-	virtual void onWallDestroyed(int x, int y) = 0 {}
+	virtual void onWallDestroyed(int x, int y) = 0;
 
-	virtual void onWallMoved(int fromX, int fromY, int toX, int toY) = 0 {}
+	virtual void onWallMoved(int fromX, int fromY, int toX, int toY) = 0;
 };
 
 class EmptyRectanglesFillRule : public IFillRule {

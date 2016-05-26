@@ -10,9 +10,9 @@
 using namespace std;
 
 Game::Game(int width, int height) :
-	mMaxPlayers(4), mNumPlayers(2),
 	mWidth(width), mHeight(height),
 	mWalls(width * height),
+	mMaxPlayers(4), mNumPlayers(2),
 	mNextEntityId(0)
 {
 	mFillRule.reset(new EmptyRectanglesFillRule(*this));
